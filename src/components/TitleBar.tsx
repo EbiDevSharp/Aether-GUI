@@ -5,7 +5,12 @@ const appWindow = getCurrentWindow();
 
 export function TitleBar() {
   return (
-    <header className="relative z-10 flex h-9 shrink-0 items-center justify-end">
+    // data-tauri-drag-region only fires when the mousedown target IS this
+    // element, so the buttons stay clickable without any extra handling.
+    <header
+      data-tauri-drag-region
+      className="relative z-10 flex h-9 shrink-0 select-none items-center justify-end"
+    >
       <button
         aria-label="Minimize"
         className="grid h-full w-13 place-items-center text-muted-foreground hover:bg-surface-2 hover:text-foreground"

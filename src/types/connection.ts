@@ -18,6 +18,9 @@ export interface ConnectionProfile {
   protocol: Protocol;
   scan_mode: ScanMode;
   ip_version: IpVersion;
+  /** Aether ≥1.1.1: reuse the last known-working gateway with a quick
+   * recheck instead of a full scan. */
+  quick_reconnect: boolean;
 }
 
 export interface LogLine {

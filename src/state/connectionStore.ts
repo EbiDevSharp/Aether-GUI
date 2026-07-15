@@ -24,12 +24,13 @@ interface ConnectionState {
   setProtocol: (protocol: ConnectionProfile["protocol"]) => void;
   setScanMode: (scan_mode: ConnectionProfile["scan_mode"]) => void;
   setIpVersion: (ip_version: ConnectionProfile["ip_version"]) => void;
+  setQuickReconnect: (quick_reconnect: boolean) => void;
   retryAfterSidecarError: () => void;
 }
 
 export const useConnectionStore = create<ConnectionState>((set, get) => ({
   status: { state: "Idle" },
-  profile: { protocol: "auto", scan_mode: "balanced", ip_version: "v4" },
+  profile: { protocol: "auto", scan_mode: "balanced", ip_version: "v4", quick_reconnect: true },
   logs: [],
   sidecarError: null,
   scanBudgetSecs: null,
@@ -69,6 +70,9 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   setIpVersion: (ip_version) =>
     set((s) => ({ profile: { ...s.profile, ip_version } })),
 
+  setQuickReconnect: (quick_reconnect) =>
+    set((s) => ({ profile: { ...s.profile, quick_reconnect } })),
+
   // Clears the fallback screen so the user can attempt Connect again (e.g.
   // after fixing a broken install) — the next connect() call will re-set
   // sidecarError if the binary is still missing.
@@ -87,6 +91,26 @@ const BUDGET_RE = /budget=(\d+)s/;
 
 /** Call once from App's top-level effect; returns a cleanup function. */
 export async function initConnectionListeners(): Promise<() => void> {
+  // Log lines arrive fast during route scanning; flushing to the store per
+  // line would mean an O(logs) array copy + a re-render each. Coalesce into
+  // one store write per ~100ms instead.
+  let pendingLogs: LogLine[] = [];
+  let flushTimer: ReturnType<typeof setTimeout> | null = null;
+  const flushLogs = () => {
+    flushTimer = null;
+    const batch = pendingLogs;
+    pendingLogs = [];
+    let budget: number | null = null;
+    for (const l of batch) {
+      const m = BUDGET_RE.exec(l.line);
+      if (m) budget = Number(m[1]);
+    }
+    useConnectionStore.setState((s) => ({
+      logs: [...s.logs, ...batch].slice(-MAX_LOG_LINES),
+      ...(budget !== null ? { scanBudgetSecs: budget } : {}),
+    }));
+  };
+
   const [unlistenStatus, unlistenLog] = await Promise.all([
     listen<ConnectionStatus>("aether://status", (e) => {
       useConnectionStore.setState({
@@ -96,11 +120,8 @@ export async function initConnectionListeners(): Promise<() => void> {
       });
     }),
     listen<LogLine>("aether://log", (e) => {
-      const budgetMatch = BUDGET_RE.exec(e.payload.line);
-      useConnectionStore.setState((s) => ({
-        logs: [...s.logs.slice(-(MAX_LOG_LINES - 1)), e.payload],
-        ...(budgetMatch ? { scanBudgetSecs: Number(budgetMatch[1]) } : {}),
-      }));
+      pendingLogs.push(e.payload);
+      flushTimer ??= setTimeout(flushLogs, 100);
     }),
   ]);
 
@@ -121,5 +142,6 @@ export async function initConnectionListeners(): Promise<() => void> {
   return () => {
     unlistenStatus();
     unlistenLog();
+    if (flushTimer !== null) clearTimeout(flushTimer);
   };
 }

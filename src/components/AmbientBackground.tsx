@@ -1,45 +1,44 @@
-import { motion, useReducedMotion } from "motion/react";
+import { useWindowFocused } from "@/state/windowFocus";
 
 /**
- * Two static-blur gradient orbs, only transform/opacity animated (cheap,
- * compositor-only) — never the blur itself, which is expensive to recompute
- * per frame. Mounted once at the App root so it never restarts across
- * MainScreen/SidecarErrorScreen transitions.
+ * Two soft gradient orbs. All motion is pure CSS (transform/opacity
+ * keyframes in index.css) on compositor-promoted layers — zero main-thread
+ * work per frame, honors prefers-reduced-motion via the media query there.
+ * No blur filter: a radial gradient already fades smoothly, so blur-[65px]
+ * was visually redundant while forcing an expensive re-raster of the layer.
+ * Paused (not removed) while the window is unfocused so the app costs
+ * ~nothing in the background and nothing jumps on refocus.
  */
 export function AmbientBackground() {
-  const reduceMotion = useReducedMotion();
+  const focused = useWindowFocused();
+  // Inline, not a Tailwind pause class — the unlayered .anim-* shorthands
+  // beat layered utilities in the cascade (see ConnectButton).
+  const playState = { animationPlayState: focused ? ("running" as const) : ("paused" as const) };
 
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-      <motion.div
-        className="absolute size-65 rounded-full blur-[65px]"
+      <div
+        className="anim-orb-a absolute size-65 rounded-full"
         style={{
           top: -60,
           right: -60,
-          background:
-            "radial-gradient(circle, var(--color-primary) 0%, transparent 70%)",
+          opacity: 0.14,
+          background: "radial-gradient(circle, var(--color-primary) 0%, transparent 70%)",
+          willChange: "transform, opacity",
+          ...playState,
         }}
-        animate={
-          reduceMotion
-            ? { opacity: 0.18 }
-            : { x: [0, 20, 0], y: [0, -15, 0], opacity: [0.14, 0.22, 0.14] }
-        }
-        transition={{ duration: 10, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
       />
-      <motion.div
-        className="absolute size-55 rounded-full blur-[65px]"
+      <div
+        className="anim-orb-b absolute size-55 rounded-full"
         style={{
           bottom: -40,
           left: -80,
+          opacity: 0.1,
           background:
             "radial-gradient(circle, var(--color-status-connected) 0%, transparent 70%)",
+          willChange: "transform, opacity",
+          ...playState,
         }}
-        animate={
-          reduceMotion
-            ? { opacity: 0.13 }
-            : { x: [0, -25, 0], y: [0, 18, 0], opacity: [0.1, 0.16, 0.1] }
-        }
-        transition={{ duration: 13, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
       />
     </div>
   );

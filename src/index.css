@@ -123,3 +123,49 @@
    specifically so height can be animated without JS measurement — no Motion
    dependency needed for this interaction (see LogsPanel.tsx). */
 
+/* All LOOPING animation lives here as pure CSS on compositor-promoted layers
+   (transform/opacity only) — Chromium runs these entirely off the main
+   thread, unlike Motion's JS-driven loops which cost a style recalc every
+   frame at 60fps (measured: ~40% of a core). Components pause them with
+   [animation-play-state:paused] while the window is unfocused. Motion is
+   reserved for one-shot transitions. */
+@keyframes ring-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.55; }
+  50% { transform: scale(1.015); opacity: 0.7; }
+}
+@keyframes ring-pulse-fast {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+@keyframes ring-pulse-slow {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+@keyframes glow-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.55; }
+  50% { transform: scale(1.04); opacity: 1; }
+}
+@keyframes orb-drift-a {
+  0%, 100% { transform: translate(0, 0); opacity: 0.14; }
+  50% { transform: translate(20px, -15px); opacity: 0.22; }
+}
+@keyframes orb-drift-b {
+  0%, 100% { transform: translate(0, 0); opacity: 0.1; }
+  50% { transform: translate(-25px, 18px); opacity: 0.16; }
+}
+
+.anim-ring-breathe { animation: ring-breathe 4.5s ease-in-out infinite; }
+.anim-ring-pulse-fast { animation: ring-pulse-fast 1.6s ease-in-out infinite; }
+.anim-ring-pulse-slow { animation: ring-pulse-slow 2.4s ease-in-out infinite; }
+.anim-glow-fast { animation: glow-pulse 1.6s ease-in-out infinite; }
+.anim-glow-slow { animation: glow-pulse 2.4s ease-in-out infinite; }
+.anim-orb-a { animation: orb-drift-a 10s ease-in-out infinite; }
+.anim-orb-b { animation: orb-drift-b 13s ease-in-out infinite; }
+
+/* The decorative loops (idle breathing, background orbs) honor reduced
+   motion; the connecting/connected pulses are active state feedback and are
+   deliberately left running (matches the original Motion behavior). */
+@media (prefers-reduced-motion: reduce) {
+  .anim-ring-breathe, .anim-orb-a, .anim-orb-b { animation: none; }
+}
+

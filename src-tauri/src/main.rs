@@ -4,6 +4,7 @@ mod aether;
 mod commands;
 mod error;
 mod events;
+mod focus;
 mod state;
 
 use state::AppState;
@@ -20,6 +21,7 @@ fn main() {
             // the user can click Connect and spawn a second one onto the
             // same port.
             aether::orphan::reap_orphan(&data_dir);
+            focus::spawn_watcher(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

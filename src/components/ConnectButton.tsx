@@ -1,6 +1,8 @@
-import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
+import { AnimatePresence, motion, type Variants } from "motion/react";
 import { AlertTriangle, Check, Loader2, Power } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useConnectionStore } from "@/state/connectionStore";
+import { useWindowFocused } from "@/state/windowFocus";
 import type { ConnectionStatus } from "@/types/connection";
 
 type Phase = "idle" | "connecting" | "connected" | "error";
@@ -21,59 +23,38 @@ function phaseOf(status: ConnectionStatus): Phase {
   }
 }
 
-/** Idle breathing is purely decorative/ambient, so it's the one loop that
- * gets fully frozen under reduced motion (rather than relying on
- * MotionConfig's default, which only strips the transform/scale part and
- * would leave the opacity half of the loop still animating). The
- * connecting/connected/error loops are active state feedback, not
- * decoration, and are left animating either way. */
-function ringVariants(reduceMotion: boolean): Variants {
-  return {
-    idle: reduceMotion
-      ? {
-          boxShadow: "0 0 0 3px var(--color-status-idle)",
-          scale: 1,
-          opacity: 0.6,
-          x: 0,
-        }
-      : {
-          boxShadow: "0 0 0 3px var(--color-status-idle)",
-          scale: [1, 1.015, 1],
-          opacity: [0.55, 0.7, 0.55],
-          x: 0,
-          transition: { duration: 4.5, repeat: Infinity, ease: "easeInOut" },
-        },
-    connecting: {
-      boxShadow: [
-        "0 0 0 3px var(--color-status-connecting), 0 0 14px 1px color-mix(in oklch, var(--color-status-connecting) 50%, transparent)",
-        "0 0 0 3px var(--color-status-connecting), 0 0 20px 3px color-mix(in oklch, var(--color-status-connecting) 50%, transparent)",
-        "0 0 0 3px var(--color-status-connecting), 0 0 14px 1px color-mix(in oklch, var(--color-status-connecting) 50%, transparent)",
-      ],
-      scale: [1, 1.08, 1],
-      opacity: [0.7, 1, 0.7],
-      x: 0,
-      transition: { duration: 1.6, repeat: Infinity, ease: "easeInOut" },
-    },
-    connected: {
-      boxShadow: [
-        "0 0 24px 4px var(--color-status-connected), 0 0 0 1px color-mix(in oklch, var(--color-status-connected) 40%, transparent)",
-        "0 0 32px 6px var(--color-status-connected), 0 0 0 1px color-mix(in oklch, var(--color-status-connected) 40%, transparent)",
-        "0 0 24px 4px var(--color-status-connected), 0 0 0 1px color-mix(in oklch, var(--color-status-connected) 40%, transparent)",
-      ],
-      scale: [1, 1.03, 1],
-      opacity: 1,
-      x: 0,
-      transition: { duration: 2.4, repeat: Infinity, ease: "easeInOut" },
-    },
-    error: {
-      boxShadow: "0 0 0 3px var(--color-status-error)",
-      scale: 1,
-      opacity: 1,
-      x: [0, -6, 6, -4, 4, 0],
-      transition: { x: { duration: 0.4, ease: "easeInOut" } },
-    },
-  };
-}
+/** Motion handles ONLY one-shots here (error shake, tap). Every infinite
+ * loop is a CSS animation from index.css on a compositor-promoted layer —
+ * Motion's JS-driven loops cost a style recalc every frame at 60fps, and
+ * its box-shadow tweens with var()/color-mix() values never converge at all
+ * (traced live: an endless per-frame write pinned the compositor forever). */
+const SHAKE_VARIANTS: Variants = {
+  rest: { x: 0 },
+  error: { x: [0, -6, 6, -4, 4, 0], transition: { x: { duration: 0.4, ease: "easeInOut" } } },
+};
+
+/** Static per-phase; the phase-change fade is a plain CSS transition. */
+const RING_SHADOW: Record<Phase, string> = {
+  idle: "0 0 0 3px var(--color-status-idle)",
+  connecting: "0 0 0 3px var(--color-status-connecting)",
+  connected: "0 0 0 1px color-mix(in oklch, var(--color-status-connected) 40%, transparent)",
+  error: "0 0 0 3px var(--color-status-error)",
+};
+
+/** CSS loop class per phase for the disc+ring layer (see index.css). */
+const RING_ANIM: Record<Phase, string> = {
+  idle: "anim-ring-breathe",
+  connecting: "anim-ring-pulse-fast",
+  connected: "anim-ring-pulse-slow",
+  error: "",
+};
+
+/** Painted once onto the glow span, then pulsed via opacity/scale only. */
+const GLOW: Partial<Record<Phase, string>> = {
+  connecting:
+    "0 0 20px 3px color-mix(in oklch, var(--color-status-connecting) 50%, transparent)",
+  connected: "0 0 32px 6px var(--color-status-connected)",
+};
 
 const ICONS: Record<Phase, typeof Power> = {
   idle: Power,
@@ -93,10 +74,18 @@ export function ConnectButton() {
   const status = useConnectionStore((s) => s.status);
   const connect = useConnectionStore((s) => s.connect);
   const disconnect = useConnectionStore((s) => s.disconnect);
-  const reduceMotion = useReducedMotion();
+  const focused = useWindowFocused();
 
   const phase = phaseOf(status);
   const Icon = ICONS[phase];
+  // Unfocused = nobody is watching, and any running animation keeps the
+  // WebView2 compositor redrawing at 60fps in the background — pause (not
+  // remove) so nothing jumps on refocus. Inline style, NOT a Tailwind
+  // [animation-play-state:paused] class: the .anim-* shorthands are
+  // unlayered CSS and silently beat layered utilities in the cascade
+  // (verified live — the class was applied yet computed state stayed
+  // "running"). Reduced motion is handled in CSS.
+  const playState = { animationPlayState: focused ? ("running" as const) : ("paused" as const) };
 
   const handleClick = () => {
     if (phase === "idle" || phase === "error") {
@@ -110,14 +99,40 @@ export function ConnectButton() {
     <motion.button
       type="button"
       aria-label={ARIA_LABEL[phase]}
-      data-connect-anchor
       onClick={handleClick}
       disabled={status.state === "Disconnecting"}
       whileTap={{ scale: 0.97 }}
-      animate={phase}
-      variants={ringVariants(!!reduceMotion)}
-      className="relative flex size-40 items-center justify-center rounded-full bg-surface-2 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
+      animate={phase === "error" ? "error" : "rest"}
+      variants={SHAKE_VARIANTS}
+      className="relative flex size-40 items-center justify-center rounded-full text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
     >
+      {/* Disc + status ring. will-change promotes it to its own compositor
+        * layer so the breathing/pulse loop composites without repainting the
+        * window (unpromoted, it was 60 full-window Paints/sec ≈ 45% of a
+        * core). Key insight: the loop animates THIS span, not the button, so
+        * Motion's tap/shake transforms never fight the CSS animation. */}
+      <span
+        aria-hidden
+        className={cn("absolute inset-0 rounded-full bg-surface-2", RING_ANIM[phase])}
+        style={{
+          boxShadow: RING_SHADOW[phase],
+          transition: "box-shadow 0.15s ease",
+          willChange: "transform, opacity",
+          ...playState,
+        }}
+      />
+
+      {GLOW[phase] && (
+        <span
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-0 rounded-full",
+            phase === "connecting" ? "anim-glow-fast" : "anim-glow-slow",
+          )}
+          style={{ boxShadow: GLOW[phase], willChange: "transform, opacity", ...playState }}
+        />
+      )}
+
       <AnimatePresence>
         {(phase === "connecting" || phase === "connected") && (
           <motion.span
@@ -143,12 +158,13 @@ export function ConnectButton() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-          className="flex items-center justify-center"
+          transition={{ duration: 0.1, ease: [0.4, 0, 0.2, 1] }}
+          className="relative flex items-center justify-center"
         >
           <Icon
             size={48}
             strokeWidth={2}
+            style={phase === "connecting" ? playState : undefined}
             className={
               phase === "connecting"
                 ? "animate-spin text-status-connecting"

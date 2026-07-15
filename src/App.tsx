@@ -3,7 +3,7 @@ import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { ConnectButton } from "@/components/ConnectButton";
 import { ConnectionStatusLine } from "@/components/ConnectionStatusLine";
 import { AdvancedPanel } from "@/components/AdvancedPanel";
-import { Backdrop } from "@/components/three/Backdrop";
+import { AmbientBackground } from "@/components/AmbientBackground";
 import { SidecarErrorScreen } from "@/components/SidecarErrorScreen";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TitleBar } from "@/components/TitleBar";
@@ -13,7 +13,7 @@ const SCREEN_TRANSITION = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -4 },
-  transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const },
+  transition: { duration: 0.16, ease: [0.22, 1, 0.36, 1] as const },
 };
 
 function MainScreen() {
@@ -44,7 +44,7 @@ export function App() {
     <TooltipProvider>
       <MotionConfig reducedMotion="user">
         <div className="relative flex h-svh w-full flex-col overflow-hidden bg-background">
-          <Backdrop />
+          <AmbientBackground />
           <TitleBar />
           <div className="relative min-h-0 flex-1">
             <AnimatePresence mode="sync">

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useConnectionStore } from "@/state/connectionStore";
+import { useWindowFocused } from "@/state/windowFocus";
 
 const TEXT_TRANSITION = {
   initial: { y: 4, opacity: 0 },
   animate: { y: 0, opacity: 1 },
   exit: { y: -4, opacity: 0 },
-  transition: { duration: 0.18, ease: [0.4, 0, 0.2, 1] as const },
+  transition: { duration: 0.1, ease: [0.4, 0, 0.2, 1] as const },
 };
 
 function useElapsed(sinceMs: number | null): { formatted: string; totalSeconds: number } {
@@ -29,13 +30,19 @@ function useElapsed(sinceMs: number | null): { formatted: string; totalSeconds: 
  * budget is known; an indeterminate sweep before then, so there's always
  * visible motion rather than a dead bar. */
 function ScanProgressBar({ percent }: { percent: number | null }) {
+  // The indeterminate sweep freezes while the window is unfocused — an
+  // infinite loop keeps the compositor at 60fps in the background (see
+  // state/windowFocus.ts), and scanning is exactly when users tab away.
+  const focused = useWindowFocused();
   return (
     <div className="h-1 w-40 overflow-hidden rounded-full bg-surface-2">
       {percent == null ? (
         <motion.div
           className="h-full w-1/3 rounded-full bg-status-connecting"
-          animate={{ x: ["-100%", "220%"] }}
-          transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+          animate={focused ? { x: ["-100%", "220%"] } : { x: "50%", opacity: 0.6 }}
+          transition={
+            focused ? { duration: 1.1, repeat: Infinity, ease: "easeInOut" } : { duration: 0.3 }
+          }
         />
       ) : (
         <motion.div

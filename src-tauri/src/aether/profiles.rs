@@ -72,15 +72,56 @@ pub struct ConnectionProfile {
     pub protocol: Protocol,
     pub scan_mode: ScanMode,
     pub ip_version: IpVersion,
+    /// Aether ≥1.1.1: reuse the last known-working gateway with a quick
+    /// recheck instead of a full scan. `serde(default)` keeps profiles saved
+    /// by older versions of this app loading cleanly.
+    #[serde(default = "default_true")]
+    pub quick_reconnect: bool,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+impl ConnectionProfile {
+    /// CLI flags for Aether ≥1.1.1 — the whole profile is passed up front so
+    /// the interactive prompts never appear (the PTY prompt-answering in
+    /// pty.rs stays as a fallback). One of the two quick-reconnect flags is
+    /// ALWAYS passed: without either, 1.1.1 asks its own interactive
+    /// "reconnect with last gateway?" question, which the GUI must never
+    /// leave unanswered.
+    pub fn as_args(&self) -> Vec<&'static str> {
+        let mut args = Vec::with_capacity(4);
+        match self.protocol {
+            Protocol::Auto => {} // Aether's own default (MASQUE)
+            Protocol::Masque => args.push("--masque"),
+            Protocol::Wireguard => args.push("--wg"),
+            Protocol::Gool => args.push("--gool"),
+        }
+        args.push(match self.scan_mode {
+            ScanMode::Turbo => "--turbo",
+            ScanMode::Balanced => "--balanced",
+            ScanMode::Thorough => "--thorough",
+            ScanMode::Stealth => "--stealth",
+        });
+        args.push(match self.ip_version {
+            IpVersion::V4 => "-4",
+            IpVersion::V6 => "-6",
+            IpVersion::Both => "--dual",
+        });
+        args.push(if self.quick_reconnect { "--quick-reconnect" } else { "--no-quick-reconnect" });
+        args
+    }
 }
 
 impl Default for ConnectionProfile {
     fn default() -> Self {
-        // Mirrors Aether's own defaults at each prompt (see aether/prompts.rs).
+        // Mirrors Aether's own defaults.
         Self {
             protocol: Protocol::Auto,
             scan_mode: ScanMode::Balanced,
             ip_version: IpVersion::V4,
+            quick_reconnect: true,
         }
     }
 }

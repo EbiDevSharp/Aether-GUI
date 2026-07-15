@@ -70,6 +70,12 @@ pub fn spawn(
 
     let mut cmd = CommandBuilder::new(binary);
     cmd.cwd(cwd);
+    // Aether ≥1.1.1 takes the whole profile as flags, so the interactive
+    // prompts below normally never appear — read_loop's prompt answering is
+    // kept as a fallback for output-format drift.
+    for arg in profile.as_args() {
+        cmd.arg(arg);
+    }
 
     let child = pair
         .slave
@@ -127,15 +133,18 @@ fn read_loop(
         // Emit every complete line, tracking which known prompt "section"
         // we're currently in (the last recognized header line wins — plain
         // log lines in between don't reset it).
-        while let Some(pos) = line_buf.find('\n') {
-            let raw_line: String = line_buf.drain(..=pos).collect();
-            let line = strip_ansi(raw_line.trim_end_matches(['\r', '\n']));
+        for raw_line in drain_lines(&mut line_buf) {
+            let line = strip_ansi(&raw_line);
             if line.is_empty() {
                 continue;
             }
             for rule in PROMPT_TABLE {
                 if (rule.header_matches)(&line) {
                     current_section = Some(rule.id);
+                    // Seeing a header again means Aether restarted its prompt
+                    // sequence (its own stdin read timed out — see
+                    // prompts.rs) — allow re-answering, or it blocks forever.
+                    answered.remove(rule.id);
                 }
             }
             let _ = log_tx.send(LogEvent { line, timestamp: now_millis() });
@@ -143,9 +152,14 @@ fn read_loop(
 
         // Whatever remains (no newline yet) is either more output still
         // arriving, or Aether blocking on stdin for the current section's
-        // answer.
+        // answer. A bare header as the partial ("Scan mode:") is output still
+        // in flight — Aether always prints the menu + "Choose…: " before
+        // blocking — so answering there would double-feed the next menu once
+        // the header completes as a line and gets un-answered above.
         let partial = strip_ansi(&line_buf);
-        if looks_like_choice_prompt(&partial) {
+        if looks_like_choice_prompt(&partial)
+            && !PROMPT_TABLE.iter().any(|r| (r.header_matches)(&partial))
+        {
             if let Some(section) = current_section {
                 if !answered.contains(section) {
                     if let Some(rule) = PROMPT_TABLE.iter().find(|r| r.id == section) {
@@ -155,6 +169,10 @@ fn read_loop(
                             let _ = w.write_all(b"\r\n");
                             let _ = w.flush();
                         }
+                        let _ = log_tx.send(LogEvent {
+                            line: format!("[gui] answered {section} \u{2192} {answer}"),
+                            timestamp: now_millis(),
+                        });
                         answered.insert(section);
                         if answered.len() == PROMPT_TABLE.len() {
                             prompts_done.store(true, Ordering::Relaxed);
@@ -164,6 +182,51 @@ fn read_loop(
             }
         }
     }
+}
+
+/// Longest the unterminated tail may grow before the front is discarded.
+/// `strip_ansi` rescans the whole tail on every read, so an unbounded tail
+/// (e.g. output that never emits a terminator) would be O(n²) CPU.
+const MAX_PARTIAL: usize = 16 * 1024;
+
+/// Drains and returns every terminated line in `buf`, leaving the
+/// unterminated tail in place. Terminal semantics, not plain `\n`-splitting:
+/// a `\r` (or ONLCR-style `\r\r`) run followed by `\n` ends a line, while a
+/// `\r` run followed by anything else is a carriage-return overwrite — a
+/// spinner/progress frame a terminal would repaint in place — so the
+/// overwritten prefix is dead output and is dropped without being emitted.
+/// A `\r` run touching the end of the buffer is kept: the `\n` half of a
+/// `\r\n` may still be in flight.
+fn drain_lines(buf: &mut String) -> Vec<String> {
+    let mut lines = Vec::new();
+    while let Some(pos) = buf.find(['\r', '\n']) {
+        let end = if buf.as_bytes()[pos] == b'\n' {
+            pos
+        } else {
+            let mut run_end = pos;
+            while run_end < buf.len() && buf.as_bytes()[run_end] == b'\r' {
+                run_end += 1;
+            }
+            if run_end == buf.len() {
+                break; // "\r" at buffer end: might be a split "\r\n"
+            }
+            if buf.as_bytes()[run_end] != b'\n' {
+                buf.drain(..run_end); // overwritten frame: discard silently
+                continue;
+            }
+            run_end
+        };
+        let line: String = buf.drain(..=end).collect();
+        lines.push(line.trim_end_matches(['\r', '\n']).to_string());
+    }
+    if buf.len() > MAX_PARTIAL {
+        let mut cut = buf.len() - MAX_PARTIAL;
+        while !buf.is_char_boundary(cut) {
+            cut += 1;
+        }
+        buf.drain(..cut);
+    }
+    lines
 }
 
 /// Aether's output includes ANSI color codes (e.g. `\x1b[32m`) around log
@@ -186,4 +249,56 @@ fn strip_ansi(s: &str) -> String {
         out.push(c);
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn feed(buf: &mut String, chunk: &str) -> Vec<String> {
+        buf.push_str(chunk);
+        drain_lines(buf)
+    }
+
+    #[test]
+    fn plain_newlines() {
+        let mut buf = String::new();
+        assert_eq!(feed(&mut buf, "a\nb\nc"), ["a", "b"]);
+        assert_eq!(buf, "c");
+    }
+
+    #[test]
+    fn crlf_and_onlcr_double_cr() {
+        let mut buf = String::new();
+        assert_eq!(feed(&mut buf, "a\r\nb\r\r\n"), ["a", "b"]);
+        assert_eq!(buf, "");
+    }
+
+    #[test]
+    fn cr_overwrite_drops_spinner_frames() {
+        let mut buf = String::new();
+        assert_eq!(feed(&mut buf, "scan 1%\rscan 2%\rscan 3%"), Vec::<String>::new());
+        assert_eq!(buf, "scan 3%"); // only the live frame survives
+        assert_eq!(feed(&mut buf, "\rscan done\n"), ["scan done"]);
+        assert_eq!(buf, "");
+    }
+
+    #[test]
+    fn lone_cr_at_end_waits_for_possible_lf() {
+        let mut buf = String::new();
+        assert_eq!(feed(&mut buf, "abc\r"), Vec::<String>::new());
+        assert_eq!(buf, "abc\r");
+        assert_eq!(feed(&mut buf, "\n"), ["abc"]); // the \r\n was split across reads
+        assert_eq!(buf, "");
+    }
+
+    #[test]
+    fn unterminated_tail_is_capped() {
+        let mut buf = String::new();
+        // Multibyte chars so the cap must respect char boundaries.
+        let big = "é".repeat(MAX_PARTIAL); // 2 bytes each → 32 KiB, no terminators
+        assert_eq!(feed(&mut buf, &big), Vec::<String>::new());
+        assert!(buf.len() <= MAX_PARTIAL + 1);
+        assert!(buf.chars().all(|c| c == 'é'));
+    }
 }
