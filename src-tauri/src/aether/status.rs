@@ -29,3 +29,15 @@ pub const CONNECT_TIMEOUT: Duration = Duration::from_secs(150);
 /// leave dangling, so a short grace period followed by SIGKILL is the
 /// expected common path here, not a rare fallback.
 pub const GRACEFUL_SHUTDOWN_GRACE: Duration = Duration::from_secs(3);
+
+/// Auto-retry policy for unexpected drops/timeouts (never for a
+/// user-requested disconnect) — applies uniformly to every protocol, since
+/// a sudden mid-session drop (observed in practice with gool, the most
+/// fragile of the three: two nested WireGuard tunnels) is exactly as
+/// disruptive on MASQUE or plain WireGuard. Backoff increases per attempt
+/// rather than retrying immediately, on the theory that whatever caused the
+/// drop (a flaky relay, a momentary network hiccup) is more likely to have
+/// cleared given a moment, and to avoid hammering the same dead endpoint.
+pub const MAX_AUTO_RETRIES: u32 = 3;
+pub const RETRY_BACKOFF: [Duration; MAX_AUTO_RETRIES as usize] =
+    [Duration::from_secs(2), Duration::from_secs(5), Duration::from_secs(10)];

@@ -9,6 +9,7 @@ function phaseOf(status: ConnectionStatus): Phase {
   switch (status.state) {
     case "Launching":
     case "Connecting":
+    case "Reconnecting":
     case "Disconnecting":
       return "connecting";
     case "Connected":

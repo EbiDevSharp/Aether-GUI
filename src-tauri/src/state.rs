@@ -7,6 +7,12 @@ use std::sync::{Arc, Mutex};
 /// SOCKS5 port to come alive) -> Connected. Any abnormal exit or timeout
 /// from Launching/Connecting/Connected goes to Error rather than a separate
 /// Disconnected state — a clean user-requested stop returns to Idle instead.
+///
+/// `Reconnecting` is the one addition: an unexpected exit or timeout that
+/// wasn't user-requested retries automatically (see aether/mod.rs's
+/// `handle_unexpected_failure`) rather than dropping straight to Error —
+/// this is the brief backoff wait before a fresh Launching begins, shown
+/// distinctly so the user knows it's a retry, not a first attempt.
 #[derive(Serialize, Clone, Debug)]
 #[serde(tag = "state")]
 pub enum ConnectionState {
@@ -17,6 +23,7 @@ pub enum ConnectionState {
     /// a pre-computed elapsed duration, so the frontend can render a live-
     /// updating session timer without needing another event from the backend.
     Connected { socks_addr: String, connected_at_ms: u64 },
+    Reconnecting { attempt: u32, max_attempts: u32 },
     Disconnecting,
     Error { message: String, phase: String },
 }

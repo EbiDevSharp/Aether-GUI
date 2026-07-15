@@ -108,6 +108,10 @@ export function ConnectionStatusLine() {
           ? `Still searching · ${attemptElapsed} · ${scanPercent}%`
           : `Still searching · ${attemptElapsed}`;
       break;
+    case "Reconnecting":
+      primary = "Reconnecting…";
+      secondary = `Attempt ${status.attempt} of ${status.max_attempts}`;
+      break;
     case "Connected":
       primary = "Connected";
       secondary = elapsed;
