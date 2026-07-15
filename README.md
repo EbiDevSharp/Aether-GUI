@@ -7,6 +7,8 @@
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![Rust](https://img.shields.io/badge/Rust-stable-000000?logo=rust&logoColor=white)
 
+**English** · [فارسی](README_fa.md)
+
 A one-click desktop GUI for [**Aether**](https://github.com/CluvexStudio/Aether), a censorship-circumvention tunnel built for heavily restricted networks. Aether itself is a terminal tool: it discovers a working route out, establishes an encrypted tunnel, and exposes a local SOCKS5 proxy. Aether-GUI wraps that terminal tool in a small, animated desktop app so you don't have to touch a command line to use it — press Connect, and everything else (identity provisioning, route discovery, prompt answering) happens automatically in the background.
 
 This project does not reimplement any of Aether's tunneling logic. It drives the real `aether` binary in a pseudo-terminal, answers its interactive setup prompts on your behalf, and watches its output to tell you what's happening. All the actual censorship-circumvention work — MASQUE/QUIC obfuscation, WireGuard, route probing — is [Aether's](https://github.com/CluvexStudio/Aether), not this repo's.
@@ -26,7 +28,6 @@ This project does not reimplement any of Aether's tunneling logic. It drives the
   Each option has an explanation on hover.
 - **Live progress** — while Aether searches for a working route, the GUI shows real elapsed time and, once Aether reports its own scan budget, an actual percentage and progress bar — not just a spinner.
 - **Automatic reconnect** — if the tunnel drops unexpectedly mid-session (observed occasionally with WARP-in-WARP, but handled the same way for every protocol), the GUI retries automatically with backoff, shown as a visible "Reconnecting… (attempt N of 3)" rather than silently dying or dumping you back to a bare error. A user-requested disconnect is never retried.
-- Animated black-orange interface: a real-time WebGL backdrop (a flowing aurora gradient, a drifting 3D particle field, and an energy ring behind the connect button that all react to the connection state — orange while searching, teal once connected), plus a connect button whose ring/glow reflects live state and smooth transitions throughout. The WebGL scene degrades gracefully: it falls back to a lightweight CSS-only animated background when a GPU context isn't available (e.g. some Linux/webkit2gtk setups) or when the OS requests reduced motion.
 
 ## Installing
 
