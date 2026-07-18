@@ -8,7 +8,11 @@ mod focus;
 mod state;
 
 use state::AppState;
-use tauri::Manager;
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
+    Manager, WindowEvent,
+};
 
 fn main() {
     tauri::Builder::default()
@@ -22,7 +26,61 @@ fn main() {
             // same port.
             aether::orphan::reap_orphan(&data_dir);
             focus::spawn_watcher(app.handle().clone());
+
+            // System tray: closing the window hides it instead of quitting
+            // (handled in on_window_event below), so the tray is the only
+            // way to fully exit while a tunnel may still be running.
+            let open_item = MenuItem::with_id(app, "open", "Open Aether-GUI", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Exit", true, None::<&str>)?;
+            let tray_menu = Menu::with_items(app, &[&open_item, &quit_item])?;
+
+            TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .tooltip("Aether-GUI")
+                .menu(&tray_menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "quit" => app.exit(0),
+                    "open" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.unminimize();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    // Restore the window on a left double-click on the icon.
+                    if let TrayIconEvent::DoubleClick {
+                        button: MouseButton::Left,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.unminimize();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // Clicking the window's close button hides it to the tray
+            // instead of exiting the app, so an active tunnel keeps running
+            // in the background. Real shutdown only happens via the tray's
+            // "Exit" item (which calls app.exit(0) and triggers RunEvent::Exit
+            // below).
+            if window.label() == "main" {
+                if let WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::connect,
