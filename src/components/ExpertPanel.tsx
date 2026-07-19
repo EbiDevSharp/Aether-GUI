@@ -9,23 +9,29 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Switch } from "@/components/ui/switch";
 import { FieldRow } from "@/components/AdvancedPanel";
 import { NoizeProfileToggle } from "@/components/NoizeProfileToggle";
+import { EchModeToggle } from "@/components/EchModeToggle";
 import { useConnectionStore } from "@/state/connectionStore";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 /**
  * Separate from the Advanced disclosure on purpose, and closed by default
- * even when Advanced is open: these two (`--noize`, `--fragment`) are the
- * settings with the most direct effect on evading active censorship, but
+ * even when Advanced is open: these are the settings with the most direct
+ * effect on evading active censorship or bypassing Aether's own scan, but
  * they're also the ones most people never need to touch — Aether's own
- * "balanced" noize default and no fragmentation already work for most
- * networks. Future CLI flags with a similarly narrow audience (--peer,
- * --ech, --keepalive, ...) belong here too, not in Advanced.
+ * "balanced" noize default, no fragmentation, and a fresh scan already work
+ * for most networks and most gateways. Future narrow-audience CLI flags
+ * (--keepalive, --wg-peer, --h2-peer, ...) belong here too, not in Advanced.
  */
 export function ExpertPanel() {
   const status = useConnectionStore((s) => s.status);
   const masqueHttp2 = useConnectionStore((s) => s.profile.masque_http2);
   const fragmentEnabled = useConnectionStore((s) => s.profile.fragment_enabled);
   const setFragmentEnabled = useConnectionStore((s) => s.setFragmentEnabled);
+  const echMode = useConnectionStore((s) => s.profile.ech_mode);
+  const echConfig = useConnectionStore((s) => s.profile.ech_config);
+  const setEchConfig = useConnectionStore((s) => s.setEchConfig);
+  const forcedPeer = useConnectionStore((s) => s.profile.forced_peer);
+  const setForcedPeer = useConnectionStore((s) => s.setForcedPeer);
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
 
@@ -75,6 +81,45 @@ export function ExpertPanel() {
                 aria-label={t.expert.fragment}
               />
             </div>
+
+            <FieldRow
+              label={t.expert.echMode}
+              tooltip={t.expert.echModeTooltip}
+              aboutLabel={t.advanced.about}
+            >
+              <div className="flex flex-col gap-1.5">
+                <EchModeToggle />
+                {echMode === "custom" && (
+                  <input
+                    type="text"
+                    value={echConfig}
+                    disabled={locked}
+                    placeholder={t.expert.echConfigPlaceholder}
+                    onChange={(e) => setEchConfig(e.target.value)}
+                    spellCheck={false}
+                    aria-label={t.expert.echConfigPlaceholder}
+                    className="w-full rounded-md bg-surface-2 px-2 py-1 font-mono text-xs text-foreground ring-1 ring-white/10 outline-none placeholder:font-sans placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+                  />
+                )}
+              </div>
+            </FieldRow>
+
+            <FieldRow
+              label={t.expert.peerOverride}
+              tooltip={t.expert.peerOverrideTooltip}
+              aboutLabel={t.advanced.about}
+            >
+              <input
+                type="text"
+                value={forcedPeer}
+                disabled={locked}
+                placeholder={t.expert.peerOverridePlaceholder}
+                onChange={(e) => setForcedPeer(e.target.value)}
+                spellCheck={false}
+                aria-label={t.expert.peerOverride}
+                className="w-full rounded-md bg-surface-2 px-2 py-1 font-mono text-xs text-foreground ring-1 ring-white/10 outline-none placeholder:font-sans placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+              />
+            </FieldRow>
           </div>
         </CollapsibleContent>
       </Collapsible>

@@ -114,6 +114,24 @@ impl NoizeProfile {
     }
 }
 
+/// Encrypted Client Hello (`--ech`). `Auto` lets Aether fetch/pick the ECH
+/// config itself; `Custom` passes a specific base64 config the user was
+/// given (e.g. by whoever runs the gateway) instead of Aether's own
+/// discovery. `Off` simply never passes `--ech` at all.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum EchMode {
+    Off,
+    Auto,
+    Custom,
+}
+
+impl Default for EchMode {
+    fn default() -> Self {
+        EchMode::Off
+    }
+}
+
 /// `local_port` and `noize_profile` ARE user-configurable via CLI flags
 /// (`--bind`, `--noize`) even though neither is one of the three interactive
 /// prompts (protocol / scan mode / IP version) Aether's own setup asks —
@@ -167,6 +185,22 @@ pub struct ConnectionProfile {
     /// back to the port they already picked is one less number to manage.
     #[serde(default)]
     pub lan_port: Option<u16>,
+    /// Encrypted Client Hello mode (`--ech <auto|base64>`). Hides the real
+    /// SNI/hostname in the outer TLS handshake — meaningful against
+    /// SNI-based censorship independent of `noize_profile`.
+    #[serde(default)]
+    pub ech_mode: EchMode,
+    /// The base64 ECH config string, only sent when `ech_mode` is `Custom`.
+    /// An empty string here behaves like `Off` (see `as_args`) rather than
+    /// passing a bogus empty value to Aether.
+    #[serde(default)]
+    pub ech_config: String,
+    /// Forces a specific gateway (`--peer <ip:port>`), skipping Aether's own
+    /// scan phase entirely. Empty means "let Aether scan" — the normal,
+    /// default behavior; this is purely opt-in for a user who already knows
+    /// a working gateway.
+    #[serde(default)]
+    pub forced_peer: String,
 }
 
 fn default_true() -> bool {
@@ -240,6 +274,28 @@ impl ConnectionProfile {
         if self.fragment_enabled {
             args.push("--fragment".into());
         }
+        match self.ech_mode {
+            EchMode::Off => {}
+            EchMode::Auto => {
+                args.push("--ech".into());
+                args.push("auto".into());
+            }
+            EchMode::Custom => {
+                let config = self.ech_config.trim();
+                if !config.is_empty() {
+                    args.push("--ech".into());
+                    args.push(config.into());
+                }
+                // Custom selected but no config typed in yet: behaves like
+                // Off rather than erroring or falling back to Auto — the
+                // user hasn't finished entering their config.
+            }
+        }
+        let peer = self.forced_peer.trim();
+        if !peer.is_empty() {
+            args.push("--peer".into());
+            args.push(peer.into());
+        }
         args
     }
 
@@ -265,6 +321,9 @@ impl Default for ConnectionProfile {
             fragment_enabled: false,
             lan_access_enabled: false,
             lan_port: None,
+            ech_mode: EchMode::Off,
+            ech_config: String::new(),
+            forced_peer: String::new(),
         }
     }
 }

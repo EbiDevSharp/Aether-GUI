@@ -39,6 +39,9 @@ interface ConnectionState {
   setFragmentEnabled: (fragment_enabled: boolean) => void;
   setLanAccessEnabled: (lan_access_enabled: boolean) => void;
   setLanPort: (lan_port: number | null) => void;
+  setEchMode: (ech_mode: ConnectionProfile["ech_mode"]) => void;
+  setEchConfig: (ech_config: string) => void;
+  setForcedPeer: (forced_peer: string) => void;
   retryAfterSidecarError: () => void;
 }
 
@@ -55,6 +58,9 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     fragment_enabled: false,
     lan_access_enabled: false,
     lan_port: null,
+    ech_mode: "off",
+    ech_config: "",
+    forced_peer: "",
   },
   logs: [],
   sidecarError: null,
@@ -116,6 +122,15 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   setLanPort: (lan_port) =>
     set((s) => ({ profile: { ...s.profile, lan_port } })),
+
+  setEchMode: (ech_mode) =>
+    set((s) => ({ profile: { ...s.profile, ech_mode } })),
+
+  setEchConfig: (ech_config) =>
+    set((s) => ({ profile: { ...s.profile, ech_config } })),
+
+  setForcedPeer: (forced_peer) =>
+    set((s) => ({ profile: { ...s.profile, forced_peer } })),
 
   setSystemProxyEnabled: async (enabled) => {
     const previous = get().systemProxyEnabled;

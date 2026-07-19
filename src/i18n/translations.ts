@@ -115,6 +115,14 @@ export const translations = {
       fragment: "Fragment ClientHello",
       fragmentTooltip:
         "Splits the TLS ClientHello into pieces on the HTTP/2 transport, defeating censors that block on the whole handshake in one packet. Only applies when MASQUE Transport is set to HTTP/2 — has no effect on HTTP/3.",
+      echMode: "Encrypted Client Hello",
+      echModeTooltip:
+        "Hides the real server name (SNI) inside the TLS handshake, independent of Obfuscation above. Auto lets Aether fetch/pick the ECH config itself; Custom sends a specific base64 config someone gave you instead.",
+      echConfigPlaceholder: "Paste base64 ECH config",
+      peerOverride: "Peer Override",
+      peerOverrideTooltip:
+        "Connects directly to a specific gateway (ip:port), skipping Aether's own scan entirely. Leave blank to let Aether scan and pick one automatically — the normal, recommended behavior.",
+      peerOverridePlaceholder: "e.g. 203.0.113.10:4500 (leave blank to scan)",
     },
     noizeProfile: {
       off: "Off",
@@ -125,6 +133,11 @@ export const translations = {
       lightDesc: "Light disguising — a small amount of junk traffic around the handshake.",
       balancedDesc: "Aether's own default — reasonable disguising without much added latency.",
       aggressiveDesc: "Heaviest disguising, most junk traffic — best against strict censorship, at some cost to speed.",
+    },
+    ech: {
+      off: "Off",
+      auto: "Auto",
+      custom: "Custom",
     },
     theme: {
       label: "Theme",
@@ -242,6 +255,14 @@ export const translations = {
       fragment: "قطعه‌قطعه‌کردن ClientHello",
       fragmentTooltip:
         "پیام ClientHello تی‌ال‌اس رو روی ترنسپورت HTTP/2 به چند تکه می‌شکنه تا سانسورهایی که کل دست‌دهی رو تو یه پکت مسدود می‌کنن دور زده بشن. فقط وقتی ترنسپورت MASQUE روی HTTP/2 باشه اثر داره — روی HTTP/3 تأثیری نداره.",
+      echMode: "Encrypted Client Hello",
+      echModeTooltip:
+        "نام واقعی سرور (SNI) رو داخل دست‌دهی TLS مخفی می‌کنه، مستقل از «مبهم‌سازی» بالا. حالت خودکار می‌ذاره Aether خودش کانفیگ ECH رو بگیره/انتخاب کنه؛ حالت سفارشی یه کانفیگ base64 مشخص که بهت داده شده رو ارسال می‌کنه.",
+      echConfigPlaceholder: "کانفیگ base64 ECH رو اینجا بچسبون",
+      peerOverride: "انتخاب دستی گیت‌وی",
+      peerOverrideTooltip:
+        "مستقیم به یه گیت‌وی مشخص (ip:port) وصل می‌شه، بدون اینکه Aether اسکن کنه. برای اسکن خودکار و انتخاب خودکار (رفتار عادی و توصیه‌شده)، خالی بذارش.",
+      peerOverridePlaceholder: "مثلاً 203.0.113.10:4500 (برای اسکن خالی بذار)",
     },
     noizeProfile: {
       off: "خاموش",
@@ -252,6 +273,11 @@ export const translations = {
       lightDesc: "مبهم‌سازی سبک — مقدار کمی ترافیک بی‌مصرف اطراف دست‌دهی.",
       balancedDesc: "پیش‌فرض خودِ Aether — مبهم‌سازی معقول بدون تأخیر اضافه‌ی زیاد.",
       aggressiveDesc: "سنگین‌ترین مبهم‌سازی، بیشترین ترافیک بی‌مصرف — بهترین گزینه در برابر سانسور شدید، با هزینه‌ی سرعت.",
+    },
+    ech: {
+      off: "خاموش",
+      auto: "خودکار",
+      custom: "سفارشی",
     },
     theme: {
       label: "پوسته رنگی",

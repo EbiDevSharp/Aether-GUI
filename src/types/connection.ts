@@ -14,6 +14,7 @@ export type Protocol = "auto" | "masque" | "wireguard" | "gool";
 export type ScanMode = "turbo" | "balanced" | "thorough" | "stealth";
 export type IpVersion = "v4" | "v6" | "both";
 export type NoizeProfile = "off" | "light" | "balanced" | "aggressive";
+export type EchMode = "off" | "auto" | "custom";
 
 export interface ConnectionProfile {
   protocol: Protocol;
@@ -39,6 +40,14 @@ export interface ConnectionProfile {
   /** Port to bind when `lan_access_enabled` is set. `null` means "use
    * `local_port`". */
   lan_port: number | null;
+  /** Encrypted Client Hello (`--ech <auto|base64>`). "custom" sends
+   * `ech_config` verbatim; "off" never passes `--ech`. */
+  ech_mode: EchMode;
+  /** Base64 ECH config, only used when `ech_mode` is "custom". */
+  ech_config: string;
+  /** Forces a specific gateway (`--peer <ip:port>`), skipping the scan
+   * phase. Empty string means "let Aether scan" (the default). */
+  forced_peer: string;
 }
 
 export interface LogLine {
