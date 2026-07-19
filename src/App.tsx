@@ -20,8 +20,16 @@ const SCREEN_TRANSITION = {
 function MainScreen() {
   return (
     <div className="relative z-10 flex h-full flex-col overflow-y-auto">
-      <div className="flex min-h-full w-full flex-col items-center justify-center gap-6 p-6">
-        <div className="flex flex-col items-center gap-6">
+      {/* justify-[safe_center] instead of justify-center: centers the group
+       * while it fits the viewport (the common, Advanced-collapsed case),
+       * but falls back to start-alignment the moment content overflows
+       * (Advanced expanded) instead of centering into it. Plain `center`
+       * centers symmetrically even when overflowing, pushing the top half
+       * above scrollTop=0 — unreachable, since scroll can't go negative —
+       * which is exactly what was clipping the Connect button. `safe`
+       * removes that failure mode entirely rather than working around it. */}
+      <div className="flex min-h-full w-full flex-col items-center justify-[safe_center] gap-5 px-6 py-5">
+        <div className="flex flex-col items-center gap-5">
           <ConnectButton />
           <ConnectionStatusLine />
           <SystemProxyToggle />
