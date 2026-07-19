@@ -55,6 +55,16 @@ export interface LogLine {
   timestamp: number;
 }
 
+/** One parsed "[+] selected/using ..." line — see the four regexes in
+ * connectionStore.ts's flushLogs. Aggregated for GatewayInfoPanel instead
+ * of making the user dig through the raw Logs accordion for them. */
+export interface GatewayInfoEntry {
+  t: number;
+  kind: "masque" | "wireguard" | "cloudflare" | "forced" | "masque_cached" | "wireguard_cached";
+  address: string;
+  rtt?: string;
+}
+
 // Mirrors src-tauri/src/commands.rs::FullAppSettings.
 export interface AppSettings {
   start_minimized: boolean;

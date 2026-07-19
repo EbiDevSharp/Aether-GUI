@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useConnectionStore } from "@/state/connectionStore";
 import { useWindowFocused } from "@/state/windowFocus";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { GatewayInfoPanel } from "@/components/GatewayInfoPanel";
 
 const TEXT_TRANSITION = {
   initial: { y: 4, opacity: 0 },
@@ -173,6 +174,7 @@ export function ConnectionStatusLine() {
           </motion.span>
         </AnimatePresence>
       )}
+      {status.state === "Connected" && <GatewayInfoPanel />}
     </div>
   );
 }

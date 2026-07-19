@@ -139,6 +139,16 @@ export const translations = {
       auto: "Auto",
       custom: "Custom",
     },
+    gatewayInfo: {
+      toggle: "Connection Info",
+      masque: "MASQUE gateway",
+      wireguard: "WireGuard endpoint",
+      cloudflareEdge: "Cloudflare edge",
+      forcedPeer: "Forced peer (probe skipped)",
+      masqueCached: "MASQUE gateway (reused)",
+      wireguardCached: "WireGuard endpoint (reused)",
+      rtt: "RTT",
+    },
     theme: {
       label: "Theme",
       aether: "Aether Orange",
@@ -278,6 +288,16 @@ export const translations = {
       off: "خاموش",
       auto: "خودکار",
       custom: "سفارشی",
+    },
+    gatewayInfo: {
+      toggle: "اطلاعات اتصال",
+      masque: "گیت‌وی MASQUE",
+      wireguard: "اندپوینت WireGuard",
+      cloudflareEdge: "edge کلودفلر",
+      forcedPeer: "پیر اجباری (بدون probe)",
+      masqueCached: "گیت‌وی MASQUE (استفاده‌ی مجدد)",
+      wireguardCached: "اندپوینت WireGuard (استفاده‌ی مجدد)",
+      rtt: "تأخیر (RTT)",
     },
     theme: {
       label: "پوسته رنگی",

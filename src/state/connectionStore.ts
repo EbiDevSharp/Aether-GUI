@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import type {
   ConnectionProfile,
   ConnectionStatus,
+  GatewayInfoEntry,
   LogLine,
 } from "@/types/connection";
 
@@ -19,6 +20,13 @@ interface ConnectionState {
    * lets the UI show real progress instead of an indefinite spinner. Reset
    * on every fresh attempt since it can differ by protocol/scan mode. */
   scanBudgetSecs: number | null;
+  /** Parsed "[+] selected/using ..." lines from the current attempt (see
+   * the four regexes below flushLogs) — which gateway/endpoint/edge/peer
+   * Aether actually settled on. Reset on every fresh attempt, same as
+   * `scanBudgetSecs`, for the same reason: it can differ attempt to
+   * attempt (a Reconnect can land on a different gateway than the
+   * original connect). */
+  connectionInfo: GatewayInfoEntry[];
   /** Independent of `status` — whether the user currently wants the
    * Windows system proxy pointed at the tunnel. Mirrors src-tauri's
    * settings.rs::AppSettings.system_proxy_enabled and can change from
@@ -65,6 +73,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   logs: [],
   sidecarError: null,
   scanBudgetSecs: null,
+  connectionInfo: [],
   systemProxyEnabled: null,
 
   connect: async () => {
@@ -160,6 +169,44 @@ if (import.meta.env.DEV) {
 }
 
 const BUDGET_RE = /budget=(\d+)s/;
+// The four lines Aether logs once it settles on how it's actually going to
+// connect (see aether/prompts.rs upstream) — kept as separate regexes
+// rather than one combined pattern so a wording change in one doesn't risk
+// silently breaking the others' matching.
+// No ^/$ anchors: Aether's own logger (env_logger) prefixes every line with
+// its own timestamp/level/target — e.g. "[2026-07-19T10:34:08Z INFO  aether]
+// [+] selected ..." — so "[+]" never actually sits at the start of the raw
+// line reaching pty.rs (which only strips ANSI codes, not this prefix).
+// Matching anywhere in the line sidesteps needing to know that prefix's
+// exact shape at all.
+const MASQUE_GATEWAY_RE = /\[\+\] selected MASQUE gateway (\S+):(\d+) \(rtt ([^)]+)\)/;
+const WG_ENDPOINT_RE = /\[\+\] selected WireGuard endpoint (\S+):(\d+) \(rtt ([^)]+)\)/;
+const CLOUDFLARE_EDGE_RE = /\[\+\] using cloudflare edge (\S+)/;
+const FORCED_PEER_RE = /\[\+\] using forced peer (\S+) \(probe skipped\)/;
+// Quick Reconnect's fast path (see profiles.rs::quick_reconnect / main.rs):
+// when the last-known gateway still passes its recheck, Aether reuses it
+// straight away and skips the scan entirely — a completely different log
+// line from the "selected ..." ones above, which only fire after an actual
+// scan. Without these, a Quick-Reconnect session would show nothing here
+// at all despite genuinely being connected through a specific gateway.
+const CACHED_MASQUE_RE = /\[\+\] cached gateway (\S+) still works; skipping scan/;
+const CACHED_WG_RE = /\[\+\] cached endpoint (\S+) still works \(rtt ([^)]+)\); skipping scan/;
+
+function parseGatewayInfo(l: LogLine): GatewayInfoEntry | null {
+  let m = MASQUE_GATEWAY_RE.exec(l.line);
+  if (m) return { t: l.timestamp, kind: "masque", address: `${m[1]}:${m[2]}`, rtt: m[3] };
+  m = WG_ENDPOINT_RE.exec(l.line);
+  if (m) return { t: l.timestamp, kind: "wireguard", address: `${m[1]}:${m[2]}`, rtt: m[3] };
+  m = CLOUDFLARE_EDGE_RE.exec(l.line);
+  if (m) return { t: l.timestamp, kind: "cloudflare", address: m[1] };
+  m = FORCED_PEER_RE.exec(l.line);
+  if (m) return { t: l.timestamp, kind: "forced", address: m[1] };
+  m = CACHED_MASQUE_RE.exec(l.line);
+  if (m) return { t: l.timestamp, kind: "masque_cached", address: m[1] };
+  m = CACHED_WG_RE.exec(l.line);
+  if (m) return { t: l.timestamp, kind: "wireguard_cached", address: m[1], rtt: m[2] };
+  return null;
+}
 
 /** Call once from App's top-level effect; returns a cleanup function. */
 export async function initConnectionListeners(): Promise<() => void> {
@@ -173,12 +220,19 @@ export async function initConnectionListeners(): Promise<() => void> {
     const batch = pendingLogs;
     pendingLogs = [];
     let budget: number | null = null;
+    const newGatewayInfo: GatewayInfoEntry[] = [];
     for (const l of batch) {
       const m = BUDGET_RE.exec(l.line);
       if (m) budget = Number(m[1]);
+
+      const info = parseGatewayInfo(l);
+      if (info) newGatewayInfo.push(info);
     }
     useConnectionStore.setState((s) => ({
       logs: [...s.logs, ...batch].slice(-MAX_LOG_LINES),
+      connectionInfo: newGatewayInfo.length
+        ? [...s.connectionInfo, ...newGatewayInfo]
+        : s.connectionInfo,
       ...(budget !== null ? { scanBudgetSecs: budget } : {}),
     }));
   };
@@ -187,8 +241,10 @@ export async function initConnectionListeners(): Promise<() => void> {
     listen<ConnectionStatus>("aether://status", (e) => {
       useConnectionStore.setState({
         status: e.payload,
-        // Fresh attempt — last attempt's budget no longer applies.
-        ...(e.payload.state === "Launching" ? { scanBudgetSecs: null } : {}),
+        // Fresh attempt — last attempt's budget/gateway info no longer apply.
+        ...(e.payload.state === "Launching"
+          ? { scanBudgetSecs: null, connectionInfo: [] }
+          : {}),
       });
     }),
     listen<LogLine>("aether://log", (e) => {

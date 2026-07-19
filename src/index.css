@@ -95,22 +95,23 @@
     --surface-2: #1e1e1e;
     --surface-3: #242424;
     --surface-4: #2a2a2a;
-    --status-connected: #2dd4bf;
+    --status-connected: #f2711c;
     --status-connecting: #f2711c;
     --status-error: #ef4444;
     --status-idle: #6b7280;
 }
 
 /* --- Alternate color themes ---------------------------------------------
-   Only the brand/accent colors vary between themes (primary, its ring, and
-   the "connecting" status pulse that's always tied to the brand color) —
-   the semantic status colors (connected=teal, error=red, idle=gray) stay
-   fixed across all themes since they carry meaning independent of brand,
-   the same reasoning as the surface/elevation scale above. Selected by
-   setting `data-theme` on <html> (see src/theme/ThemeContext.tsx); "aether"
-   is the default and matches the :root block above, so it has no override
-   block of its own. Adding a new theme is just one more block here plus one
-   entry in src/theme/themes.ts — nothing else needs to change. */
+   The brand/accent colors vary between themes (primary, its ring, and the
+   "connecting"/"connected" status colors — both tied to the brand color, so
+   the Connect button reads as "on brand" in every phase, not just while
+   idle/connecting). error=red and idle=gray stay fixed across all themes
+   since they carry meaning independent of brand, the same reasoning as the
+   surface/elevation scale above. Selected by setting `data-theme` on <html>
+   (see src/theme/ThemeContext.tsx); "aether" is the default and matches the
+   :root block above, so it has no override block of its own. Adding a new
+   theme is just one more block here plus one entry in src/theme/themes.ts —
+   nothing else needs to change. */
 html[data-theme="teal"] {
   --primary: #14b8a6;
   --primary-foreground: #0d0d0f;
@@ -119,6 +120,7 @@ html[data-theme="teal"] {
   --sidebar-primary-foreground: #0d0d0f;
   --sidebar-ring: #14b8a6;
   --status-connecting: #14b8a6;
+  --status-connected: #14b8a6;
 }
 html[data-theme="violet"] {
   --primary: #8b5cf6;
@@ -128,6 +130,7 @@ html[data-theme="violet"] {
   --sidebar-primary-foreground: #0d0d0f;
   --sidebar-ring: #8b5cf6;
   --status-connecting: #8b5cf6;
+  --status-connected: #8b5cf6;
 }
 html[data-theme="crimson"] {
   --primary: #e11d48;
@@ -137,6 +140,7 @@ html[data-theme="crimson"] {
   --sidebar-primary-foreground: #f2f2f2;
   --sidebar-ring: #e11d48;
   --status-connecting: #e11d48;
+  --status-connected: #e11d48;
 }
 
 /* --- Language-specific overrides -----------------------------------------

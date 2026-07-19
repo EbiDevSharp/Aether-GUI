@@ -209,6 +209,7 @@ export function AdvancedPanel() {
             >
               <input
                 type="number"
+                dir="ltr"
                 min={1}
                 max={65535}
                 value={portDraft}
@@ -219,7 +220,7 @@ export function AdvancedPanel() {
                   if (e.key === "Enter") e.currentTarget.blur();
                 }}
                 aria-label={t.advanced.localPort}
-                className="w-24 rounded-md bg-surface-2 px-2 py-1 text-xs text-foreground ring-1 ring-white/10 outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+                className="w-24 rounded-md bg-surface-2 px-2 py-1 text-left text-xs text-foreground ring-1 ring-white/10 outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
               />
             </FieldRow>
 
@@ -245,6 +246,7 @@ export function AdvancedPanel() {
                 <div className="flex flex-col gap-1">
                   <input
                     type="number"
+                    dir="ltr"
                     min={1}
                     max={65535}
                     value={lanPortDraft}
@@ -256,7 +258,7 @@ export function AdvancedPanel() {
                       if (e.key === "Enter") e.currentTarget.blur();
                     }}
                     aria-label={t.advanced.allowLan}
-                    className="w-32 rounded-md bg-surface-2 px-2 py-1 text-xs text-foreground ring-1 ring-white/10 outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+                    className="w-32 rounded-md bg-surface-2 px-2 py-1 text-left text-xs text-foreground ring-1 ring-white/10 outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
                   />
                   {lanIp && (
                     <p className="text-[11px] text-muted-foreground">
@@ -365,11 +367,12 @@ export function AdvancedPanel() {
               <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-100">
                 <div
                   ref={viewportRef}
+                  dir="ltr"
                   onScroll={(e) => {
                     const el = e.currentTarget;
                     setAutoScroll(el.scrollHeight - el.scrollTop - el.clientHeight < 24);
                   }}
-                  className="max-h-64 overflow-y-auto rounded-md bg-black/20 p-2 font-mono text-xs text-muted-foreground ring-1 ring-white/10"
+                  className="max-h-64 overflow-y-auto rounded-md bg-black/20 p-2 text-left font-mono text-xs text-muted-foreground ring-1 ring-white/10"
                 >
                   {logs.length === 0 ? (
                     <p className="text-status-idle">{t.advanced.noOutput}</p>
