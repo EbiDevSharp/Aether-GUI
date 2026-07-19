@@ -213,6 +213,6 @@ export const translations = {
       crimson: "قرمز زرشکی",
     },
   },
-} as const;
+};
 
 export type Translation = typeof translations.en;
