@@ -4,6 +4,7 @@ mod aether;
 mod commands;
 mod error;
 mod events;
+mod filelog;
 mod focus;
 mod i18n;
 mod settings;
@@ -102,6 +103,7 @@ fn main() {
             commands::get_system_proxy_enabled,
             commands::set_system_proxy_enabled,
             commands::set_language,
+            commands::open_log_folder,
         ])
         .build(tauri::generate_context!())
         .expect("error building tauri application")

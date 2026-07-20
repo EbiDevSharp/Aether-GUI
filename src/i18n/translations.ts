@@ -77,6 +77,7 @@ export const translations = {
         "Starts the tunnel automatically as soon as Aether-GUI launches, using your last-connected profile.",
       logs: "Logs",
       noOutput: "No output yet.",
+      openLogsFolder: "Open logs folder",
       about: (label: string) => `About ${label}`,
     },
     protocol: {
@@ -228,6 +229,7 @@ export const translations = {
         "به محض اجرای Aether-GUI، تونل رو با آخرین پروفایل متصل‌شده به‌صورت خودکار وصل می‌کنه.",
       logs: "لاگ‌ها",
       noOutput: "هنوز خروجی‌ای نیست.",
+      openLogsFolder: "باز کردن پوشه‌ی لاگ‌ها",
       about: (label: string) => `درباره‌ی ${label}`,
     },
     protocol: {

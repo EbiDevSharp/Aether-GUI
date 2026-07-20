@@ -6,6 +6,7 @@ pub mod status;
 
 use crate::error::AetherError;
 use crate::events::{now_millis, LogEvent, LOG_EVENT, STATUS_EVENT};
+use crate::filelog;
 use crate::state::ConnectionState;
 use profiles::ConnectionProfile;
 use pty::PtySession;
@@ -14,6 +15,34 @@ use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
+
+/// Recognizes Aether's own "why did the tunnel actually end" log lines and
+/// extracts a short human-readable reason from them, for
+/// `handle_unexpected_failure` to attach to its otherwise-generic message.
+/// Matched loosely (`.find`, not an exact/anchored pattern) since these are
+/// Aether's own words, not ours — a wording tweak in a future Aether
+/// release should still partially match (e.g. picking up "peer closed:
+/// ...” even if a prefix around it changes) rather than silently stop
+/// working the way an anchored regex would. Checked most-specific first so
+/// a line matching more than one pattern picks the best one.
+fn extract_reason(line: &str) -> Option<String> {
+    if let Some(idx) = line.find("peer closed") {
+        return Some(line[idx..].to_string());
+    }
+    if let Some(idx) = line.find("local closed") {
+        return Some(line[idx..].to_string());
+    }
+    if let Some(idx) = line.find("connection closed") {
+        return Some(line[idx..].to_string());
+    }
+    if line.contains("MASQUE tunnel ended") || line.contains("MASQUE tunnel closed") {
+        // Aether's own "[-] " marker — strip whatever prefix (env_logger's
+        // timestamp/level) comes before it, keep just its message.
+        let idx = line.find("[-]").unwrap_or(0);
+        return Some(line[idx..].to_string());
+    }
+    None
+}
 
 pub struct AetherManager {
     session: Option<PtySession>,
@@ -24,6 +53,15 @@ pub struct AetherManager {
     /// (a proven-working connection earns a full retry budget for whatever
     /// drops it next), and on a user-requested disconnect.
     retry_count: u32,
+    /// The most recent "why did this actually end" line Aether itself
+    /// logged (see `extract_reason` below) — "peer closed: reason=...",
+    /// "local closed: ...", "connection closed: ...". Consumed (`take`n) by
+    /// `handle_unexpected_failure` so it only ever attaches to the one
+    /// failure it actually explains, never lingering into the next one.
+    /// `None` whenever nothing matched, which is fine — the generic
+    /// message (e.g. "Lost connection unexpectedly") is still shown on its
+    /// own in that case.
+    last_reason: Option<String>,
 }
 
 impl AetherManager {
@@ -33,6 +71,7 @@ impl AetherManager {
             state: ConnectionState::Idle,
             user_requested_stop: false,
             retry_count: 0,
+            last_reason: None,
         }
     }
 
@@ -153,14 +192,25 @@ fn spawn_and_monitor(
         let mut mgr = manager.lock().unwrap();
         mgr.session = Some(session);
         mgr.user_requested_stop = false;
+        mgr.last_reason = None;
     }
 
     // Forward every log line to the frontend's advanced/log panel as it
-    // arrives, independent of whether status classification succeeds.
+    // arrives, independent of whether status classification succeeds. Also
+    // persisted to disk (filelog.rs) — the in-memory panel is capped and
+    // wiped on restart, so this is the copy that survives long enough to
+    // diagnose a drop noticed hours later. And scanned for a "why did this
+    // end" reason (extract_reason) that handle_unexpected_failure can
+    // attach to its message instead of just a bare exit code.
     {
         let app_for_logs = app.clone();
+        let manager_for_logs = Arc::clone(&manager);
         std::thread::spawn(move || {
             for log in log_rx {
+                filelog::append(&app_for_logs, &log.line, log.timestamp);
+                if let Some(reason) = extract_reason(&log.line) {
+                    manager_for_logs.lock().unwrap().last_reason = Some(reason);
+                }
                 let _ = app_for_logs.emit(LOG_EVENT, &log);
             }
         });
@@ -194,7 +244,7 @@ fn handle_unexpected_failure(
     failure_message: String,
     phase: &'static str,
 ) {
-    let attempt = {
+    let (attempt, reason) = {
         let mut mgr = manager.lock().unwrap();
         if mgr.user_requested_stop {
             // request_disconnect is already handling this exit; don't race
@@ -203,9 +253,18 @@ fn handle_unexpected_failure(
         }
         mgr.session = None;
         mgr.retry_count += 1;
-        mgr.retry_count
+        // Taken, not just read: a reason belongs to the one failure it
+        // actually explains. Leaving it in place would let it silently
+        // reattach to some unrelated later failure that never logged one
+        // of its own.
+        (mgr.retry_count, mgr.last_reason.take())
     };
     orphan::clear_pid(&data_dir);
+
+    let failure_message = match reason {
+        Some(r) => format!("{failure_message} — {r}"),
+        None => failure_message,
+    };
 
     if attempt > status::MAX_AUTO_RETRIES {
         set_state_and_emit(

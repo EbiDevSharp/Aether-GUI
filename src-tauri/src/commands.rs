@@ -123,3 +123,23 @@ pub fn set_system_proxy_enabled(app: AppHandle, state: State<AppState>, enabled:
     let status = state.manager.lock().unwrap().status();
     crate::sysproxy::set_user_enabled(&app, &status, enabled);
 }
+
+/// Opens the persistent log directory (filelog.rs) in Explorer, for
+/// looking at a drop that happened hours ago and has long since scrolled
+/// out of the in-app Logs panel. Windows-only, like the rest of this app's
+/// OS-specific bits (sysproxy.rs, autostart) — matches `cfg(windows)` in
+/// Cargo.toml rather than pulling in a cross-platform "opener" crate for a
+/// single Explorer call.
+#[tauri::command]
+pub fn open_log_folder(app: AppHandle) -> Result<(), AetherError> {
+    let dir = crate::filelog::dir_path(&app)
+        .ok_or_else(|| AetherError::Internal("could not resolve log directory".into()))?;
+    #[cfg(windows)]
+    {
+        std::process::Command::new("explorer")
+            .arg(dir)
+            .spawn()
+            .map_err(|e| AetherError::Internal(e.to_string()))?;
+    }
+    Ok(())
+}

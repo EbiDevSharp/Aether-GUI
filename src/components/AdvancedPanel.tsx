@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, Info, Settings2 } from "lucide-react";
+import { ChevronDown, FolderOpen, Info, Settings2 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   Collapsible,
@@ -380,6 +380,14 @@ export function AdvancedPanel() {
                     logs.map((l, i) => <p key={i}>{l.line}</p>)
                   )}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => void invoke("open_log_folder")}
+                  className="mt-1.5 flex items-center gap-1 self-start text-[11px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md"
+                >
+                  <FolderOpen size={11} />
+                  {t.advanced.openLogsFolder}
+                </button>
               </CollapsibleContent>
             </Collapsible>
           </div>
