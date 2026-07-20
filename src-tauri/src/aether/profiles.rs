@@ -41,6 +41,12 @@ pub enum ScanMode {
     Balanced,
     Thorough,
     Stealth,
+    /// Aether ≥1.3.0: for each candidate, opens a real tunnel and does a
+    /// real HTTP round trip through it before accepting the gateway —
+    /// slower (up to 180s, per cli.rs/prober.rs upstream) but catches
+    /// gateways that pass the handshake yet don't actually forward data,
+    /// or drop it again within the first few minutes.
+    Ironclad,
 }
 
 impl ScanMode {
@@ -50,6 +56,7 @@ impl ScanMode {
             ScanMode::Balanced => "2",
             ScanMode::Thorough => "3",
             ScanMode::Stealth => "4",
+            ScanMode::Ironclad => "5",
         }
     }
 
@@ -59,6 +66,8 @@ impl ScanMode {
             ScanMode::Balanced => "balanced",
             ScanMode::Thorough => "thorough",
             ScanMode::Stealth => "stealth",
+            ScanMode::Ironclad => "ironclad",
+            
         }
     }
 }
@@ -201,6 +210,15 @@ pub struct ConnectionProfile {
     /// a working gateway.
     #[serde(default)]
     pub forced_peer: String,
+    /// Passes `--verbose` (`AETHER_VERBOSE=1`), which Aether ≥1.3.0 maps to
+    /// `RUST_LOG=info,aether=debug` — surfaces the detailed per-stage
+    /// `log::debug!` lines (handshake timing, data-plane verification,
+    /// exact retry reasons) that are invisible at the default "info" level.
+    /// Off by default: the extra volume isn't worth it for routine use, but
+    /// it's the single most useful thing to turn on when diagnosing a
+    /// mysterious drop (see filelog.rs for where these end up on disk).
+    #[serde(default)]
+    pub verbose_logs: bool,
 }
 
 fn default_true() -> bool {
@@ -236,6 +254,7 @@ impl ConnectionProfile {
                 ScanMode::Balanced => "--balanced",
                 ScanMode::Thorough => "--thorough",
                 ScanMode::Stealth => "--stealth",
+                ScanMode::Ironclad => "--ironclad",
             }
             .into(),
         );
@@ -296,6 +315,9 @@ impl ConnectionProfile {
             args.push("--peer".into());
             args.push(peer.into());
         }
+        if self.verbose_logs {
+            args.push("--verbose".into());
+        }
         args
     }
 
@@ -324,6 +346,7 @@ impl Default for ConnectionProfile {
             ech_mode: EchMode::Off,
             ech_config: String::new(),
             forced_peer: String::new(),
+            verbose_logs: false,
         }
     }
 }

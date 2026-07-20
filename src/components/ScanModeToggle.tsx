@@ -18,12 +18,14 @@ export function ScanModeToggle() {
     balanced: t.scanMode.balanced,
     thorough: t.scanMode.thorough,
     stealth: t.scanMode.stealth,
+    ironclad: t.scanMode.ironclad,
   };
   const descriptions: Record<ScanMode, string> = {
     turbo: t.scanMode.turboDesc,
     balanced: t.scanMode.balancedDesc,
     thorough: t.scanMode.thoroughDesc,
     stealth: t.scanMode.stealthDesc,
+    ironclad: t.scanMode.ironcladDesc,
   };
 
   return (

@@ -96,6 +96,9 @@ export const translations = {
       balancedDesc: "Good default — reasonable speed without excessive probing.",
       thoroughDesc: "Slower, more exhaustive search for working routes.",
       stealthDesc: "Slowest and most cautious — hardest for a censor to fingerprint.",
+      ironclad: "Ironclad",
+      ironcladDesc:
+        "Aether ≥1.3.0: opens a real tunnel and does a real HTTP round trip through each candidate before accepting it — slowest of all (up to 3 minutes), but catches gateways that pass the handshake and then drop traffic a few minutes in.",
     },
     ipVersion: {
       v4: "IPv4",
@@ -124,6 +127,9 @@ export const translations = {
       peerOverrideTooltip:
         "Connects directly to a specific gateway (ip:port), skipping Aether's own scan entirely. Leave blank to let Aether scan and pick one automatically — the normal, recommended behavior.",
       peerOverridePlaceholder: "e.g. 203.0.113.10:4500 (leave blank to scan)",
+      verboseLogs: "Verbose Logs",
+      verboseLogsTooltip:
+        "Aether ≥1.3.0: much more detailed logs — exact handshake timing, every validation step, the real reason behind a retry. The most useful thing to turn on when trying to figure out why a connection keeps dropping; saved to the same log file either way (see the log folder button in Advanced → Logs), just with a lot more detail in it.",
     },
     noizeProfile: {
       off: "Off",
@@ -247,6 +253,9 @@ export const translations = {
       balancedDesc: "پیش‌فرض خوب — سرعت مناسب بدون پروب بیش از حد.",
       thoroughDesc: "کندتر، جستجوی کامل‌تر برای پیدا کردن مسیرهای کاری.",
       stealthDesc: "کندترین و محتاط‌ترین حالت — سخت‌ترین حالت برای شناسایی توسط سانسورچی.",
+      ironclad: "Ironclad",
+      ironcladDesc:
+        "Aether نسخه‌ی ۱.۳.۰ به بعد: برای هر کاندید، یه تونل واقعی می‌زنه و یه درخواست HTTP واقعی از توش رد می‌کنه قبل از اینکه قبولش کنه — کندترین حالته (تا ۳ دقیقه)، ولی گیت‌وی‌هایی که handshake رو رد می‌کنن ولی بعد چند دقیقه داده رو قطع می‌کنن رو از اول می‌گیره.",
     },
     ipVersion: {
       v4: "IPv4",
@@ -275,6 +284,9 @@ export const translations = {
       peerOverrideTooltip:
         "مستقیم به یه گیت‌وی مشخص (ip:port) وصل می‌شه، بدون اینکه Aether اسکن کنه. برای اسکن خودکار و انتخاب خودکار (رفتار عادی و توصیه‌شده)، خالی بذارش.",
       peerOverridePlaceholder: "مثلاً 203.0.113.10:4500 (برای اسکن خالی بذار)",
+      verboseLogs: "لاگ‌های کامل (Verbose)",
+      verboseLogsTooltip:
+        "Aether نسخه‌ی ۱.۳.۰ به بعد: لاگ‌های خیلی جزئی‌تر — زمان دقیق هر مرحله‌ی handshake، هر قدم validation، دلیل واقعی هر retry. مفیدترین گزینه وقتی می‌خوای بفهمی چرا اتصال هی قطع می‌شه؛ چه روشن باشه چه نه رو همون فایل لاگ ذخیره می‌شه (دکمه‌ی پوشه‌ی لاگ تو Advanced ← Logs)، فقط با جزئیات خیلی بیشتر.",
     },
     noizeProfile: {
       off: "خاموش",

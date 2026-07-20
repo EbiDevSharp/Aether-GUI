@@ -11,7 +11,7 @@ export type ConnectionStatus =
   | { state: "Error"; message: string; phase: string };
 
 export type Protocol = "auto" | "masque" | "wireguard" | "gool";
-export type ScanMode = "turbo" | "balanced" | "thorough" | "stealth";
+export type ScanMode = "turbo" | "balanced" | "thorough" | "stealth" | "ironclad";
 export type IpVersion = "v4" | "v6" | "both";
 export type NoizeProfile = "off" | "light" | "balanced" | "aggressive";
 export type EchMode = "off" | "auto" | "custom";
@@ -48,6 +48,9 @@ export interface ConnectionProfile {
   /** Forces a specific gateway (`--peer <ip:port>`), skipping the scan
    * phase. Empty string means "let Aether scan" (the default). */
   forced_peer: string;
+  /** Aether ≥1.3.0: `--verbose`, detailed per-stage debug logs — the most
+   * useful thing to turn on when diagnosing a mysterious drop. */
+  verbose_logs: boolean;
 }
 
 export interface LogLine {

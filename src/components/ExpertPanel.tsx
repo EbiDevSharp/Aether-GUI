@@ -32,6 +32,8 @@ export function ExpertPanel() {
   const setEchConfig = useConnectionStore((s) => s.setEchConfig);
   const forcedPeer = useConnectionStore((s) => s.profile.forced_peer);
   const setForcedPeer = useConnectionStore((s) => s.setForcedPeer);
+  const verboseLogs = useConnectionStore((s) => s.profile.verbose_logs);
+  const setVerboseLogs = useConnectionStore((s) => s.setVerboseLogs);
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
 
@@ -121,6 +123,24 @@ export function ExpertPanel() {
                 className="w-full rounded-md bg-surface-2 px-2 py-1 text-left font-mono text-xs text-foreground ring-1 ring-white/10 outline-none placeholder:font-sans placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
               />
             </FieldRow>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                {t.expert.verboseLogs}
+                <Tooltip>
+                  <TooltipTrigger aria-label={t.advanced.about(t.expert.verboseLogs)}>
+                    <Info size={12} />
+                  </TooltipTrigger>
+                  <TooltipContent>{t.expert.verboseLogsTooltip}</TooltipContent>
+                </Tooltip>
+              </div>
+              <Switch
+                checked={verboseLogs}
+                onCheckedChange={setVerboseLogs}
+                disabled={locked}
+                aria-label={t.expert.verboseLogs}
+              />
+            </div>
           </div>
         </CollapsibleContent>
       </Collapsible>

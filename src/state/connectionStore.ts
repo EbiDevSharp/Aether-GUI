@@ -50,6 +50,7 @@ interface ConnectionState {
   setEchMode: (ech_mode: ConnectionProfile["ech_mode"]) => void;
   setEchConfig: (ech_config: string) => void;
   setForcedPeer: (forced_peer: string) => void;
+  setVerboseLogs: (verbose_logs: boolean) => void;
   retryAfterSidecarError: () => void;
 }
 
@@ -69,6 +70,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     ech_mode: "off",
     ech_config: "",
     forced_peer: "",
+    verbose_logs: false,
   },
   logs: [],
   sidecarError: null,
@@ -140,6 +142,9 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   setForcedPeer: (forced_peer) =>
     set((s) => ({ profile: { ...s.profile, forced_peer } })),
+
+  setVerboseLogs: (verbose_logs) =>
+    set((s) => ({ profile: { ...s.profile, verbose_logs } })),
 
   setSystemProxyEnabled: async (enabled) => {
     const previous = get().systemProxyEnabled;
