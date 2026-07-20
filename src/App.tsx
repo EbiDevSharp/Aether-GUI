@@ -10,6 +10,7 @@ import { SidecarErrorScreen } from "@/components/SidecarErrorScreen";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TitleBar } from "@/components/TitleBar";
 import { initConnectionListeners, useConnectionStore } from "@/state/connectionStore";
+import { initUpdateListeners } from "@/state/updateStore";
 
 const SCREEN_TRANSITION = {
   initial: { opacity: 0, y: 8 },
@@ -49,8 +50,10 @@ export function App() {
 
   useEffect(() => {
     const cleanup = initConnectionListeners();
+    const updateCleanup = initUpdateListeners();
     return () => {
       void cleanup.then((unlisten) => unlisten());
+      void updateCleanup.then((unlisten) => unlisten());
     };
   }, []);
 

@@ -2,6 +2,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Maximize2, Minus, X } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { UpdateMenu } from "@/components/UpdateMenu";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const appWindow = getCurrentWindow();
@@ -19,6 +20,7 @@ export function TitleBar() {
       <div className="flex items-center gap-0.5 px-1.5">
         <LanguageSwitcher />
         <ThemeSwitcher />
+        <UpdateMenu />
       </div>
 
       {/* Window controls stay on the physical right regardless of RTL — an

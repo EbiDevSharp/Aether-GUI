@@ -143,3 +143,23 @@ pub fn open_log_folder(app: AppHandle) -> Result<(), AetherError> {
     }
     Ok(())
 }
+
+/// Opens `url` in the OS default browser — used for "View Release" in the
+/// update menu (update.rs). Windows-only, like `open_log_folder` above:
+/// `explorer <url>` hands off to whatever's registered for http(s), the
+/// same trick, without pulling in a cross-platform shell/opener plugin for
+/// this one call.
+#[tauri::command]
+pub fn open_external_url(url: String) -> Result<(), AetherError> {
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err(AetherError::Internal("refusing to open a non-http(s) URL".into()));
+    }
+    #[cfg(windows)]
+    {
+        std::process::Command::new("explorer")
+            .arg(url)
+            .spawn()
+            .map_err(|e| AetherError::Internal(e.to_string()))?;
+    }
+    Ok(())
+}

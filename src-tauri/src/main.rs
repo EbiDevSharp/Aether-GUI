@@ -11,6 +11,7 @@ mod settings;
 mod state;
 mod sysproxy;
 mod tray;
+mod update;
 
 use state::AppState;
 use tauri::{Manager, WindowEvent};
@@ -74,6 +75,10 @@ fn main() {
                 });
             }
 
+            // Best-effort, off the startup path — see update::check_on_startup's
+            // doc comment for why this never blocks or surfaces an error here.
+            update::check_on_startup(app.handle().clone());
+
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -104,6 +109,10 @@ fn main() {
             commands::set_system_proxy_enabled,
             commands::set_language,
             commands::open_log_folder,
+            commands::open_external_url,
+            update::check_for_update,
+            update::get_cached_update_info,
+            update::acknowledge_update,
         ])
         .build(tauri::generate_context!())
         .expect("error building tauri application")

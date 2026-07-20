@@ -16,6 +16,10 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 portable-pty = "0.8"
 thiserror = "1"
+# Blocking, no async runtime needed — matches this codebase's existing
+# std::thread-based monitor loops rather than pulling in tokio just for
+# one occasional GitHub API GET (see update.rs).
+ureq = { version = "2", features = ["json"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_Networking_WinInet"] }

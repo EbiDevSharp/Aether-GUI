@@ -31,6 +31,12 @@ pub struct AppSettings {
     /// changed later via the `set_language` command, which updates both.
     #[serde(default = "default_language")]
     pub language: String,
+    /// The upstream Aether release tag the user has already been shown by
+    /// update.rs — NOT the version actually bundled (Aether has no
+    /// `--version` flag to check that; see update.rs's doc comment on
+    /// `check`). `None` until the very first update check ever runs.
+    #[serde(default)]
+    pub last_seen_aether_version: Option<String>,
 }
 
 fn default_language() -> String {
@@ -48,6 +54,7 @@ impl Default for AppSettings {
             auto_connect: false,
             system_proxy_enabled: true,
             language: default_language(),
+            last_seen_aether_version: None,
         }
     }
 }
