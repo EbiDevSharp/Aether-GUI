@@ -437,12 +437,22 @@ fn monitor_connected(
         // would otherwise stall waiting on this every 12s).
         drop(mgr);
 
-        if status::tunnel_is_live(profile.local_port, status::HEALTH_PROBE_TIMEOUT) {
-            consecutive_failures = 0;
-            continue;
+        match status::tunnel_is_live(profile.local_port, status::HEALTH_PROBE_TIMEOUT) {
+            Ok(()) => {
+                consecutive_failures = 0;
+                continue;
+            }
+            Err(reason) => {
+                consecutive_failures += 1;
+                let line = format!(
+                    "[health-probe] failed ({consecutive_failures}/{}): {reason}",
+                    status::HEALTH_PROBE_FAILURE_THRESHOLD
+                );
+                filelog::append(&app, &line, now_millis());
+                let _ = app.emit(LOG_EVENT, LogEvent { line, timestamp: now_millis() });
+            }
         }
 
-        consecutive_failures += 1;
         if consecutive_failures < status::HEALTH_PROBE_FAILURE_THRESHOLD {
             continue;
         }

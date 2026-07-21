@@ -35,28 +35,30 @@ pub fn port_is_live(port: u16) -> bool {
 /// already depends on, effectively always reachable, and a bare TCP CONNECT
 /// is enough — no need to actually speak TLS to it, only the SOCKS5 CONNECT
 /// reply code matters.
-pub fn tunnel_is_live(port: u16, timeout: Duration) -> bool {
-    let Ok(mut stream) = TcpStream::connect_timeout(&socks_addr(port), timeout) else {
-        return false;
-    };
-    if stream.set_read_timeout(Some(timeout)).is_err() {
-        return false;
-    }
-    if stream.set_write_timeout(Some(timeout)).is_err() {
-        return false;
-    }
+///
+/// Returns `Err(reason)` instead of a bare `false` — a censored network is
+/// exactly the environment this app runs in, and 1.1.1.1 specifically is a
+/// plausible thing for such a network (or even an upstream policy) to treat
+/// differently from arbitrary traffic. Without knowing *which* step failed,
+/// a probe failure and an actually-dead tunnel look identical from the
+/// caller's side; this makes that visible in the logs instead of guessing.
+pub fn tunnel_is_live(port: u16, timeout: Duration) -> Result<(), String> {
+    let mut stream = TcpStream::connect_timeout(&socks_addr(port), timeout)
+        .map_err(|e| format!("connect to local SOCKS5 port failed: {e}"))?;
+    stream
+        .set_read_timeout(Some(timeout))
+        .map_err(|e| format!("set_read_timeout failed: {e}"))?;
+    stream
+        .set_write_timeout(Some(timeout))
+        .map_err(|e| format!("set_write_timeout failed: {e}"))?;
 
     // Greeting: SOCKS version 5, one offered auth method, no-auth (0x00).
     // Aether's listener doesn't require credentials for local connections.
-    if stream.write_all(&[0x05, 0x01, 0x00]).is_err() {
-        return false;
-    }
+    stream.write_all(&[0x05, 0x01, 0x00]).map_err(|e| format!("greeting write failed: {e}"))?;
     let mut method_reply = [0u8; 2];
-    if stream.read_exact(&mut method_reply).is_err() {
-        return false;
-    }
+    stream.read_exact(&mut method_reply).map_err(|e| format!("greeting read failed (likely timeout): {e}"))?;
     if method_reply != [0x05, 0x00] {
-        return false; // wrong version, or server rejected no-auth
+        return Err(format!("greeting rejected: got {method_reply:02x?}, expected [05, 00]"));
     }
 
     // CONNECT request: VER CMD RSV ATYP(IPv4) DST.ADDR DST.PORT.
@@ -64,19 +66,23 @@ pub fn tunnel_is_live(port: u16, timeout: Duration) -> bool {
     let mut request = vec![0x05, 0x01, 0x00, 0x01];
     request.extend_from_slice(&target_ip.octets());
     request.extend_from_slice(&443u16.to_be_bytes());
-    if stream.write_all(&request).is_err() {
-        return false;
-    }
+    stream.write_all(&request).map_err(|e| format!("CONNECT request write failed: {e}"))?;
 
     // Reply: VER REP RSV ATYP [BND.ADDR BND.PORT] — only REP (byte 1)
     // matters here, and 0x00 means "succeeded". No need to read the
     // variable-length address that follows; the socket is dropped
     // immediately after, closing the probe connection either way.
     let mut reply_header = [0u8; 4];
-    if stream.read_exact(&mut reply_header).is_err() {
-        return false;
+    stream
+        .read_exact(&mut reply_header)
+        .map_err(|e| format!("CONNECT reply read failed (likely timeout reaching 1.1.1.1:443 through the tunnel): {e}"))?;
+    if reply_header[0] != 0x05 || reply_header[1] != 0x00 {
+        return Err(format!(
+            "CONNECT to 1.1.1.1:443 rejected: SOCKS5 reply code 0x{:02x} (0x00 = succeeded)",
+            reply_header[1]
+        ));
     }
-    reply_header[0] == 0x05 && reply_header[1] == 0x00
+    Ok(())
 }
 
 /// Empirically (manually running v1.0.1 to completion), Aether's own route-
