@@ -33,7 +33,7 @@ export function NoizeProfileToggle() {
         if (v) setNoizeProfile(v as NoizeProfile);
       }}
       disabled={locked}
-      className="w-full gap-0 rounded-full bg-black/20 p-1 ring-1 ring-white/10"
+      className="w-full gap-0 rounded-full bg-muted p-1 ring-1 ring-border"
     >
       {(Object.keys(labels) as NoizeProfile[]).map((profile) => (
         <Tooltip key={profile}>

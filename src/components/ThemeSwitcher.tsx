@@ -32,7 +32,7 @@ export function ThemeSwitcher() {
             >
               <span
                 aria-hidden
-                className="size-3 shrink-0 rounded-full ring-1 ring-white/20"
+                className="size-3 shrink-0 rounded-full ring-1 ring-border"
                 style={{ backgroundColor: swatch }}
               />
               <span className="flex-1">{t.theme[id]}</span>

@@ -28,7 +28,7 @@ export function EchModeToggle() {
         if (v) setEchMode(v as EchMode);
       }}
       disabled={locked}
-      className="w-full gap-0 rounded-full bg-black/20 p-1 ring-1 ring-white/10"
+      className="w-full gap-0 rounded-full bg-muted p-1 ring-1 ring-border"
     >
       {(Object.keys(labels) as EchMode[]).map((mode) => (
         <ToggleGroupItem

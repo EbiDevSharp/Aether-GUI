@@ -25,7 +25,7 @@ export function IpVersionToggle() {
         if (v) setIpVersion(v as IpVersion);
       }}
       disabled={locked}
-      className="w-full gap-0 rounded-full bg-black/20 p-1 ring-1 ring-white/10"
+      className="w-full gap-0 rounded-full bg-muted p-1 ring-1 ring-border"
     >
       {(Object.keys(labels) as IpVersion[]).map((v) => (
         <ToggleGroupItem

@@ -221,7 +221,7 @@ export function AdvancedPanel() {
                   if (e.key === "Enter") e.currentTarget.blur();
                 }}
                 aria-label={t.advanced.localPort}
-                className="w-24 rounded-md bg-surface-2 px-2 py-1 text-left text-xs text-foreground ring-1 ring-white/10 outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+                className="w-24 rounded-md bg-surface-2 px-2 py-1 text-left text-xs text-foreground ring-1 ring-border outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
               />
             </FieldRow>
 
@@ -259,7 +259,7 @@ export function AdvancedPanel() {
                       if (e.key === "Enter") e.currentTarget.blur();
                     }}
                     aria-label={t.advanced.allowLan}
-                    className="w-32 rounded-md bg-surface-2 px-2 py-1 text-left text-xs text-foreground ring-1 ring-white/10 outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+                    className="w-32 rounded-md bg-surface-2 px-2 py-1 text-left text-xs text-foreground ring-1 ring-border outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
                   />
                   {lanIp && (
                     <p className="text-[11px] text-muted-foreground">
@@ -373,7 +373,7 @@ export function AdvancedPanel() {
                     const el = e.currentTarget;
                     setAutoScroll(el.scrollHeight - el.scrollTop - el.clientHeight < 24);
                   }}
-                  className="max-h-64 overflow-y-auto rounded-md bg-surface-1 p-2 text-left font-mono text-xs text-muted-foreground ring-1 ring-white/10"
+                  className="max-h-64 overflow-y-auto rounded-md bg-surface-1 p-2 text-left font-mono text-xs text-muted-foreground ring-1 ring-border"
                 >
                   {logs.length === 0 ? (
                     <p className="text-status-idle">{t.advanced.noOutput}</p>

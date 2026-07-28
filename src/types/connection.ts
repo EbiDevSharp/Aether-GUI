@@ -82,4 +82,5 @@ export interface AppSettings {
   auto_connect: boolean;
   launch_on_startup: boolean;
   language: string;
+  compact_window: boolean;
 }

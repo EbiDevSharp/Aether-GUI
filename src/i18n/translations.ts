@@ -13,6 +13,8 @@ export const translations = {
       close: "Close",
       language: "Language",
       theme: "Theme",
+      compactSize: "Compact window",
+      normalSize: "Normal window",
     },
     update: {
       toggle: "Check for updates",
@@ -181,6 +183,7 @@ export const translations = {
       teal: "Signal Teal",
       violet: "Deep Violet",
       crimson: "Crimson",
+      light: "Light",
     },
   },
   fa: {
@@ -190,6 +193,8 @@ export const translations = {
       close: "بستن",
       language: "زبان",
       theme: "پوسته رنگی",
+      compactSize: "پنجره‌ی جمع‌وجور",
+      normalSize: "پنجره‌ی عادی",
     },
     update: {
       toggle: "بررسی آپدیت",
@@ -357,6 +362,7 @@ export const translations = {
       teal: "فیروزه‌ای سیگنال",
       violet: "بنفش تیره",
       crimson: "قرمز زرشکی",
+      light: "روشن",
     },
   },
 };

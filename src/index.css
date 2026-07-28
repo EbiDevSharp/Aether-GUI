@@ -57,9 +57,10 @@
     --color-status-idle: var(--status-idle);
 }
 
-/* Fixed dark brand theme only — deliberately no light-mode `:root` block or
-   `.dark` class toggle, per the approved design (this is a single-theme
-   utility app, not a themeable product). */
+/* Dark brand theme (default: "aether") — the only theme when this file was
+   first written; a `data-theme` attribute-based system was added later
+   (see the block below and src/theme/ThemeContext.tsx), so this :root
+   block now doubles as that system's default entry. */
 :root {
     --background: #0d0d0f;
     --foreground: #f2f2f2;
@@ -102,16 +103,28 @@
 }
 
 /* --- Alternate color themes ---------------------------------------------
-   The brand/accent colors vary between themes (primary, its ring, and the
-   "connecting"/"connected" status colors — both tied to the brand color, so
-   the Connect button reads as "on brand" in every phase, not just while
-   idle/connecting). error=red and idle=gray stay fixed across all themes
-   since they carry meaning independent of brand, the same reasoning as the
-   surface/elevation scale above. Selected by setting `data-theme` on <html>
-   (see src/theme/ThemeContext.tsx); "aether" is the default and matches the
+   "teal"/"violet"/"crimson" only vary the brand/accent colors (primary, its
+   ring, and the "connecting"/"connected" status colors — both tied to the
+   brand color, so the Connect button reads as "on brand" in every phase,
+   not just while idle/connecting); error=red and idle=gray stay fixed
+   across those three since they carry meaning independent of brand, the
+   same reasoning as the surface/elevation scale above.
+
+   "light" is different in kind, not just another accent: it flips the
+   whole background/surface/text scale (dark canvas -> light canvas), so it
+   overrides every variable the three accent-only themes leave alone too.
+   Any component styled with a literal dark-mode-only value instead of a
+   theme variable (a hardcoded `white/10` ring, `bg-black/20`, etc.) will
+   look wrong under this theme specifically — those were already migrated
+   to `ring-border`/`bg-muted`/etc. across the component tree when "light"
+   was added; keep new components on theme variables too, not literals.
+
+   Selected by setting `data-theme` on <html> (see
+   src/theme/ThemeContext.tsx); "aether" is the default and matches the
    :root block above, so it has no override block of its own. Adding a new
-   theme is just one more block here plus one entry in src/theme/themes.ts —
-   nothing else needs to change. */
+   accent-only theme is just one more small block here plus one entry in
+   src/theme/ThemeContext.tsx's THEMES list — a from-scratch *canvas* theme
+   like "light" needs the fuller variable set "light" itself overrides. */
 html[data-theme="teal"] {
   --primary: #14b8a6;
   --primary-foreground: #0d0d0f;
@@ -141,6 +154,45 @@ html[data-theme="crimson"] {
   --sidebar-ring: #e11d48;
   --status-connecting: #e11d48;
   --status-connected: #e11d48;
+}
+
+/* Same brand orange as "aether" — this is a canvas swap, not a new accent,
+   so primary/status-connecting/status-connected are deliberately left as
+   the :root block's values (no overrides for them here at all) rather than
+   repeated. Off-white (#f7f7f8) instead of pure #fff for --background: less
+   glare, and it leaves --card/--sidebar/--surface-1 (all pure white or
+   near it) one visible step lighter for contrast against the page, mirror
+   of how dark mode's surfaces sit one step lighter than its background. */
+html[data-theme="light"] {
+  --background: #f7f7f8;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary-foreground: #0d0d0f;
+  --secondary: #ececed;
+  --secondary-foreground: #18181b;
+  --muted: #ececed;
+  --muted-foreground: #6b7280;
+  --accent: #e4e4e7;
+  --accent-foreground: #18181b;
+  --destructive: #dc2626;
+  --border: color-mix(in oklch, black 10%, transparent);
+  --input: color-mix(in oklch, black 14%, transparent);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #18181b;
+  --sidebar-primary-foreground: #0d0d0f;
+  --sidebar-accent: #ececed;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: color-mix(in oklch, black 10%, transparent);
+
+  --surface-1: #ffffff;
+  --surface-2: #f0f0f1;
+  --surface-3: #e7e7e9;
+  --surface-4: #dedee1;
+  --status-error: #dc2626;
+  --status-idle: #71717a;
 }
 
 /* --- Language-specific overrides -----------------------------------------

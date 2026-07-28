@@ -34,7 +34,7 @@ export function MasqueTransportToggle() {
         if (v) setMasqueHttp2(v === "http2");
       }}
       disabled={locked || notMasque}
-      className="w-full gap-0 rounded-full bg-black/20 p-1 ring-1 ring-white/10"
+      className="w-full gap-0 rounded-full bg-muted p-1 ring-1 ring-border"
     >
       {(Object.keys(labels) as Transport[]).map((tr) => (
         <Tooltip key={tr}>

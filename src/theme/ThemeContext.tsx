@@ -1,15 +1,18 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-export type ThemeId = "aether" | "teal" | "violet" | "crimson";
+export type ThemeId = "aether" | "teal" | "violet" | "crimson" | "light";
 
-/** Adding a theme: add an id here (with its `swatch` for the picker) and a
- * matching `html[data-theme="..."]` block in index.css — nothing else
- * needs to change, ThemeSwitcher renders this list generically. */
+/** Adding an accent-only theme: add an id here (with its `swatch` for the
+ * picker) and a matching `html[data-theme="..."]` block in index.css that
+ * just overrides the brand colors — see index.css's comment above the
+ * theme blocks for why "light" itself needed a fuller variable set than
+ * this pattern normally requires. */
 export const THEMES: { id: ThemeId; swatch: string }[] = [
   { id: "aether", swatch: "#f2711c" },
   { id: "teal", swatch: "#14b8a6" },
   { id: "violet", swatch: "#8b5cf6" },
   { id: "crimson", swatch: "#e11d48" },
+  { id: "light", swatch: "#f7f7f8" },
 ];
 
 const STORAGE_KEY = "aether-gui:theme";

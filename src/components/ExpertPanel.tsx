@@ -100,7 +100,7 @@ export function ExpertPanel() {
                     onChange={(e) => setEchConfig(e.target.value)}
                     spellCheck={false}
                     aria-label={t.expert.echConfigPlaceholder}
-                    className="w-full rounded-md bg-surface-2 px-2 py-1 font-mono text-xs text-foreground ring-1 ring-white/10 outline-none placeholder:font-sans placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+                    className="w-full rounded-md bg-surface-2 px-2 py-1 font-mono text-xs text-foreground ring-1 ring-border outline-none placeholder:font-sans placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
                   />
                 )}
               </div>
@@ -120,7 +120,7 @@ export function ExpertPanel() {
                 onChange={(e) => setForcedPeer(e.target.value)}
                 spellCheck={false}
                 aria-label={t.expert.peerOverride}
-                className="w-full rounded-md bg-surface-2 px-2 py-1 text-left font-mono text-xs text-foreground ring-1 ring-white/10 outline-none placeholder:font-sans placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+                className="w-full rounded-md bg-surface-2 px-2 py-1 text-left font-mono text-xs text-foreground ring-1 ring-border outline-none placeholder:font-sans placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
               />
             </FieldRow>
 

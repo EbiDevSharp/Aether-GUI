@@ -80,7 +80,7 @@ export function GatewayInfoPanel() {
            * Override fields in Advanced/Expert. */}
           <div
             dir="ltr"
-            className="mt-1 flex flex-col gap-1 rounded-md bg-surface-1 p-2 text-left font-mono text-[11px] text-muted-foreground ring-1 ring-white/10"
+            className="mt-1 flex flex-col gap-1 rounded-md bg-surface-1 p-2 text-left font-mono text-[11px] text-muted-foreground ring-1 ring-border"
           >
             {entries.map((entry, i) => (
               <div key={i} className="flex items-center justify-between gap-3">
@@ -94,7 +94,7 @@ export function GatewayInfoPanel() {
               </div>
             ))}
             {identity && (entries.length > 0 || identity.ipv4 || identity.ipv6) && (
-              <div className="mt-0.5 border-t border-white/10 pt-1">
+              <div className="mt-0.5 border-t border-border pt-1">
                 {identity.ipv4 && (
                   <div className="flex items-center justify-between gap-3">
                     <span className="shrink-0">{t.gatewayInfo.warpIpv4}</span>

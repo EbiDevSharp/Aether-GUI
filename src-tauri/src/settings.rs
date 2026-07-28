@@ -37,6 +37,12 @@ pub struct AppSettings {
     /// `check`). `None` until the very first update check ever runs.
     #[serde(default)]
     pub last_seen_aether_version: Option<String>,
+    /// Small fixed window size (see main.rs's COMPACT_SIZE /
+    /// NORMAL_SIZE) instead of the normal 420×640. Applied both at launch
+    /// (main.rs::setup, before the window is shown, so there's no
+    /// flash-then-shrink) and live via `set_compact_window`.
+    #[serde(default)]
+    pub compact_window: bool,
 }
 
 fn default_language() -> String {
@@ -55,6 +61,7 @@ impl Default for AppSettings {
             system_proxy_enabled: true,
             language: default_language(),
             last_seen_aether_version: None,
+            compact_window: false,
         }
     }
 }

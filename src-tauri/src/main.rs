@@ -16,6 +16,18 @@ mod update;
 use state::AppState;
 use tauri::{Manager, WindowEvent};
 
+/// Must match tauri.conf.json's window `"width"/"height"` — that's the
+/// size the window is actually created at, this is just what we resize
+/// back to when leaving compact mode (see commands.rs::set_compact_window).
+pub const NORMAL_SIZE: (f64, f64) = (420.0, 640.0);
+/// Small fixed size for `compact_window` — still tall enough for the core
+/// group (Connect button, status line, System Proxy chip) plus the three
+/// collapsed accordion headers (Advanced/Expert/Connection Info) without
+/// needing to scroll in the common case; opening any of those accordions
+/// in compact mode falls back to the normal scrollable behavior
+/// (App.tsx's `justify-[safe_center]`), same as it does at normal size.
+pub const COMPACT_SIZE: (f64, f64) = (300.0, 480.0);
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
@@ -57,8 +69,11 @@ fn main() {
             // launched us at login with the --minimized flag.
             let app_settings = settings::load(app.handle());
             let launched_minimized = std::env::args().any(|a| a == "--minimized");
-            if !(app_settings.start_minimized || launched_minimized) {
-                if let Some(window) = app.get_webview_window("main") {
+            if let Some(window) = app.get_webview_window("main") {
+                if app_settings.compact_window {
+                    let _ = window.set_size(tauri::LogicalSize::new(COMPACT_SIZE.0, COMPACT_SIZE.1));
+                }
+                if !(app_settings.start_minimized || launched_minimized) {
                     let _ = window.show();
                     let _ = window.set_focus();
                 }
@@ -103,6 +118,7 @@ fn main() {
             commands::get_lan_ip,
             commands::get_app_settings,
             commands::set_start_minimized,
+            commands::set_compact_window,
             commands::set_auto_connect,
             commands::set_launch_on_startup,
             commands::get_system_proxy_enabled,

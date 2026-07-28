@@ -19,7 +19,7 @@ export function SystemProxyToggle() {
   const { t } = useLanguage();
 
   return (
-    <div className="flex items-center gap-2 rounded-full bg-surface-2/60 px-3 py-1.5 ring-1 ring-white/10">
+    <div className="flex items-center gap-2 rounded-full bg-surface-2/60 px-3 py-1.5 ring-1 ring-border">
       <span className="flex items-center gap-1 text-xs text-muted-foreground">
         {t.systemProxy.label}
         <Tooltip>

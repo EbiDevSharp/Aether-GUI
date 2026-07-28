@@ -58,6 +58,7 @@ pub struct FullAppSettings {
     pub auto_connect: bool,
     pub launch_on_startup: bool,
     pub language: String,
+    pub compact_window: bool,
 }
 
 #[tauri::command]
@@ -69,6 +70,7 @@ pub fn get_app_settings(app: AppHandle) -> FullAppSettings {
         auto_connect: stored.auto_connect,
         launch_on_startup,
         language: stored.language,
+        compact_window: stored.compact_window,
     }
 }
 
@@ -84,6 +86,25 @@ pub fn set_auto_connect(app: AppHandle, enabled: bool) {
     let mut stored = settings::load(&app);
     stored.auto_connect = enabled;
     settings::save(&app, &stored);
+}
+
+/// Resizes the window live (no restart needed) and persists the choice for
+/// next launch (applied before the window is shown — see main.rs::setup).
+/// A plain custom command rather than the frontend calling the window API
+/// directly, so `main.rs`'s `NORMAL_SIZE`/`COMPACT_SIZE` constants stay the
+/// single source of truth for both the live and at-launch cases.
+#[tauri::command]
+pub fn set_compact_window(app: AppHandle, enabled: bool) -> Result<(), AetherError> {
+    let mut stored = settings::load(&app);
+    stored.compact_window = enabled;
+    settings::save(&app, &stored);
+    if let Some(window) = app.get_webview_window("main") {
+        let size = if enabled { crate::COMPACT_SIZE } else { crate::NORMAL_SIZE };
+        window
+            .set_size(tauri::LogicalSize::new(size.0, size.1))
+            .map_err(|e| AetherError::Internal(e.to_string()))?;
+    }
+    Ok(())
 }
 
 #[tauri::command]
