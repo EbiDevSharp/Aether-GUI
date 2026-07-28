@@ -52,6 +52,10 @@ interface ConnectionState {
   setForcedPeer: (forced_peer: string) => void;
   setVerboseLogs: (verbose_logs: boolean) => void;
   retryAfterSidecarError: () => void;
+  /** Clears only the in-memory panel view — the persistent file log
+   * (filelog.rs, %APPDATA%\...\logs\aether-YYYY-MM-DD.log) is untouched,
+   * so this is safe to use freely without losing real history. */
+  clearLogs: () => void;
 }
 
 export const useConnectionStore = create<ConnectionState>((set, get) => ({
@@ -163,6 +167,8 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   // after fixing a broken install) — the next connect() call will re-set
   // sidecarError if the binary is still missing.
   retryAfterSidecarError: () => set({ sidecarError: null }),
+
+  clearLogs: () => set({ logs: [] }),
 }));
 
 // Dev-only: lets the 3D backdrop's per-state moods be driven from the WebView2

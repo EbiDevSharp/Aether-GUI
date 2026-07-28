@@ -35,7 +35,20 @@ fn extract_reason(line: &str) -> Option<String> {
     if let Some(idx) = line.find("connection closed") {
         return Some(line[idx..].to_string());
     }
-    if line.contains("MASQUE tunnel ended") || line.contains("MASQUE tunnel closed") {
+    // Aether ≥1.4.0: WireGuard/gool's own active health-check — fires when
+    // no valid data has arrived from the peer for a while, instead of
+    // waiting for something else to notice. Has its own "[wg]" marker
+    // rather than "[-]", so it's checked before the "[-]" branch below.
+    if let Some(idx) = line.find("tunnel considered dead") {
+        let start = line.rfind("[wg]").unwrap_or(idx);
+        return Some(line[start..].to_string());
+    }
+    if line.contains("MASQUE tunnel ended")
+        || line.contains("MASQUE tunnel closed")
+        || line.contains("gool tunnel ended")
+        || line.contains("gool tunnel closed")
+        || line.contains("blacklisting and rescanning")
+    {
         // Aether's own "[-] " marker — strip whatever prefix (env_logger's
         // timestamp/level) comes before it, keep just its message.
         let idx = line.find("[-]").unwrap_or(0);

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, FolderOpen, Info, Settings2 } from "lucide-react";
+import { ChevronDown, Eraser, FolderOpen, Info, Settings2 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   Collapsible,
@@ -58,6 +58,7 @@ export function FieldRow({
  */
 export function AdvancedPanel() {
   const logs = useConnectionStore((s) => s.logs);
+  const clearLogs = useConnectionStore((s) => s.clearLogs);
   const status = useConnectionStore((s) => s.status);
   const quickReconnect = useConnectionStore((s) => s.profile.quick_reconnect);
   const setQuickReconnect = useConnectionStore((s) => s.setQuickReconnect);
@@ -372,7 +373,7 @@ export function AdvancedPanel() {
                     const el = e.currentTarget;
                     setAutoScroll(el.scrollHeight - el.scrollTop - el.clientHeight < 24);
                   }}
-                  className="max-h-64 overflow-y-auto rounded-md bg-black/20 p-2 text-left font-mono text-xs text-muted-foreground ring-1 ring-white/10"
+                  className="max-h-64 overflow-y-auto rounded-md bg-surface-1 p-2 text-left font-mono text-xs text-muted-foreground ring-1 ring-white/10"
                 >
                   {logs.length === 0 ? (
                     <p className="text-status-idle">{t.advanced.noOutput}</p>
@@ -380,14 +381,26 @@ export function AdvancedPanel() {
                     logs.map((l, i) => <p key={i}>{l.line}</p>)
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void invoke("open_log_folder")}
-                  className="mt-1.5 flex items-center gap-1 self-start text-[11px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md"
-                >
-                  <FolderOpen size={11} />
-                  {t.advanced.openLogsFolder}
-                </button>
+                <div className="mt-1.5 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void invoke("open_log_folder")}
+                    className="flex items-center gap-1 text-[11px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md"
+                  >
+                    <FolderOpen size={11} />
+                    {t.advanced.openLogsFolder}
+                  </button>
+                  {logs.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearLogs}
+                      className="flex items-center gap-1 text-[11px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md"
+                    >
+                      <Eraser size={11} />
+                      {t.advanced.clearLogs}
+                    </button>
+                  )}
+                </div>
               </CollapsibleContent>
             </Collapsible>
           </div>

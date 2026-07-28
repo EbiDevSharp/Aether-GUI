@@ -93,6 +93,7 @@ export const translations = {
       logs: "Logs",
       noOutput: "No output yet.",
       openLogsFolder: "Open logs folder",
+      clearLogs: "Clear",
       about: (label: string) => `About ${label}`,
     },
     protocol: {
@@ -170,6 +171,9 @@ export const translations = {
       masqueCached: "MASQUE gateway (reused)",
       wireguardCached: "WireGuard endpoint (reused)",
       rtt: "RTT",
+      warpIpv4: "WARP IPv4",
+      warpIpv6: "WARP IPv6",
+      peerPublicKey: "Peer public key",
     },
     theme: {
       label: "Theme",
@@ -266,6 +270,7 @@ export const translations = {
       logs: "لاگ‌ها",
       noOutput: "هنوز خروجی‌ای نیست.",
       openLogsFolder: "باز کردن پوشه‌ی لاگ‌ها",
+      clearLogs: "پاک کردن",
       about: (label: string) => `درباره‌ی ${label}`,
     },
     protocol: {
@@ -342,6 +347,9 @@ export const translations = {
       masqueCached: "گیت‌وی MASQUE (استفاده‌ی مجدد)",
       wireguardCached: "اندپوینت WireGuard (استفاده‌ی مجدد)",
       rtt: "تأخیر (RTT)",
+      warpIpv4: "آی‌پی WARP (نسخه ۴)",
+      warpIpv6: "آی‌پی WARP (نسخه ۶)",
+      peerPublicKey: "کلید عمومی Peer",
     },
     theme: {
       label: "پوسته رنگی",

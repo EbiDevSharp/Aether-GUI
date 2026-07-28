@@ -68,6 +68,14 @@ export interface GatewayInfoEntry {
   rtt?: string;
 }
 
+// Mirrors src-tauri/src/commands.rs::WarpIdentity — deliberately only the
+// safe fields (no keys/tokens); see that struct's doc-comment.
+export interface WarpIdentity {
+  ipv4: string;
+  ipv6: string;
+  wg_peer_public_key: string;
+}
+
 // Mirrors src-tauri/src/commands.rs::FullAppSettings.
 export interface AppSettings {
   start_minimized: boolean;

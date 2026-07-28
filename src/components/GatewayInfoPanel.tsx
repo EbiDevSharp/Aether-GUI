@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, Network } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 import {
   Collapsible,
   CollapsibleContent,
@@ -7,7 +8,7 @@ import {
 } from "@/components/ui/collapsible";
 import { useConnectionStore } from "@/state/connectionStore";
 import { useLanguage } from "@/i18n/LanguageContext";
-import type { GatewayInfoEntry } from "@/types/connection";
+import type { GatewayInfoEntry, WarpIdentity } from "@/types/connection";
 
 /**
  * Aggregates the "[+] selected ..." / "[+] using ..." lines Aether logs
@@ -18,13 +19,31 @@ import type { GatewayInfoEntry } from "@/types/connection";
  * like Advanced/Expert. Renders nothing if no such line has been seen yet
  * — a future Aether wording change would just mean an empty list, not a
  * crash, since nothing here assumes all four patterns exist every time.
+ *
+ * Also shows the WARP-assigned tunnel addresses and Cloudflare's WireGuard
+ * peer public key (commands.rs::get_warp_identity), read once per
+ * connection straight from Aether's own persisted identity file rather
+ * than parsed from logs — Aether never prints these to stdout.
  */
 export function GatewayInfoPanel() {
   const entries = useConnectionStore((s) => s.connectionInfo);
+  const status = useConnectionStore((s) => s.status);
+  const protocol = useConnectionStore((s) => s.profile.protocol);
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
+  const [identity, setIdentity] = useState<WarpIdentity | null>(null);
 
-  if (entries.length === 0) return null;
+  useEffect(() => {
+    if (status.state !== "Connected") {
+      setIdentity(null);
+      return;
+    }
+    invoke<WarpIdentity | null>("get_warp_identity", { protocol })
+      .then(setIdentity)
+      .catch((e) => console.error("Failed to read WARP identity:", e));
+  }, [status.state, protocol]);
+
+  if (entries.length === 0 && !identity) return null;
 
   function kindLabel(kind: GatewayInfoEntry["kind"]): string {
     switch (kind) {
@@ -61,7 +80,7 @@ export function GatewayInfoPanel() {
            * Override fields in Advanced/Expert. */}
           <div
             dir="ltr"
-            className="mt-1 flex flex-col gap-1 rounded-md bg-black/20 p-2 text-left font-mono text-[11px] text-muted-foreground ring-1 ring-white/10"
+            className="mt-1 flex flex-col gap-1 rounded-md bg-surface-1 p-2 text-left font-mono text-[11px] text-muted-foreground ring-1 ring-white/10"
           >
             {entries.map((entry, i) => (
               <div key={i} className="flex items-center justify-between gap-3">
@@ -74,6 +93,28 @@ export function GatewayInfoPanel() {
                 </span>
               </div>
             ))}
+            {identity && (entries.length > 0 || identity.ipv4 || identity.ipv6) && (
+              <div className="mt-0.5 border-t border-white/10 pt-1">
+                {identity.ipv4 && (
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="shrink-0">{t.gatewayInfo.warpIpv4}</span>
+                    <span className="truncate text-foreground">{identity.ipv4}</span>
+                  </div>
+                )}
+                {identity.ipv6 && (
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="shrink-0">{t.gatewayInfo.warpIpv6}</span>
+                    <span className="truncate text-foreground">{identity.ipv6}</span>
+                  </div>
+                )}
+                {identity.wg_peer_public_key && (
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="shrink-0">{t.gatewayInfo.peerPublicKey}</span>
+                    <span className="truncate text-foreground">{identity.wg_peer_public_key}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </CollapsibleContent>
       </Collapsible>

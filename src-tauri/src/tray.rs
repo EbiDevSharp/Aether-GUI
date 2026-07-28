@@ -307,9 +307,12 @@ fn notify(app: &AppHandle, previous: &ConnectionState, new_state: &ConnectionSta
         (_, ConnectionState::Connected { profile_summary, .. }) => {
             Some(i18n::notification_connected(profile_summary))
         }
-        (ConnectionState::Connected { .. } | ConnectionState::Disconnecting, ConnectionState::Idle) => {
-            Some(i18n::notification_disconnected().to_string())
-        }
+        (
+            ConnectionState::Connected { .. }
+            | ConnectionState::Disconnecting
+            | ConnectionState::Reconnecting { .. },
+            ConnectionState::Idle,
+        ) => Some(i18n::notification_disconnected().to_string()),
         (_, ConnectionState::Error { message, .. }) => Some(i18n::notification_error(message)),
         _ => None,
     };

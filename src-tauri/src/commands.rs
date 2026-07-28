@@ -2,7 +2,7 @@ use crate::aether::{self, profiles::ConnectionProfile};
 use crate::error::AetherError;
 use crate::settings;
 use crate::state::{AppState, ConnectionState};
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 use tauri_plugin_autostart::ManagerExt;
 
 #[tauri::command]
@@ -142,6 +142,56 @@ pub fn open_log_folder(app: AppHandle) -> Result<(), AetherError> {
             .map_err(|e| AetherError::Internal(e.to_string()))?;
     }
     Ok(())
+}
+
+/// The safe subset of Aether's `PersistedIdentity` (config.rs upstream) —
+/// deliberately does NOT mirror `access_token`, `cert_pem`/`key_pem`, or
+/// `wg_private_key`. Those never get deserialized here at all (not just
+/// omitted from the response), so there's no path by which a future change
+/// to this command could accidentally leak them to the frontend.
+#[derive(serde::Deserialize, Default)]
+struct SafeIdentityFields {
+    #[serde(default)]
+    ipv4: String,
+    #[serde(default)]
+    ipv6: String,
+    #[serde(default)]
+    wg_peer_public_key: String,
+}
+
+#[derive(serde::Serialize)]
+pub struct WarpIdentity {
+    pub ipv4: String,
+    pub ipv6: String,
+    pub wg_peer_public_key: String,
+}
+
+/// Reads the WARP-assigned tunnel addresses and Cloudflare's own WireGuard
+/// peer public key out of whichever identity file matches the active
+/// protocol — `aether-masque.toml` for MASQUE, `aether.toml` (the "warp"
+/// identity) otherwise. Both files live alongside the Aether binary's other
+/// per-profile state, in the same app-data directory `pty::spawn` sets as
+/// its cwd (see aether/pty.rs) — Aether writes them itself on first
+/// successful registration, so this can return `None` on a fresh install
+/// before any connection has ever succeeded.
+#[tauri::command]
+pub fn get_warp_identity(app: AppHandle, protocol: String) -> Option<WarpIdentity> {
+    let dir = app.path().app_data_dir().ok()?;
+    // "auto" resolves to MASQUE in practice — see
+    // profiles::Protocol::as_menu_choice, where Auto and Masque answer the
+    // same menu choice — so it reads the same identity file Masque does.
+    let filename =
+        if protocol == "masque" || protocol == "auto" { "aether-masque.toml" } else { "aether.toml" };
+    let text = std::fs::read_to_string(dir.join(filename)).ok()?;
+    let parsed: SafeIdentityFields = toml::from_str(&text).ok()?;
+    if parsed.ipv4.is_empty() && parsed.ipv6.is_empty() && parsed.wg_peer_public_key.is_empty() {
+        return None;
+    }
+    Some(WarpIdentity {
+        ipv4: parsed.ipv4,
+        ipv6: parsed.ipv6,
+        wg_peer_public_key: parsed.wg_peer_public_key,
+    })
 }
 
 /// Opens `url` in the OS default browser — used for "View Release" in the

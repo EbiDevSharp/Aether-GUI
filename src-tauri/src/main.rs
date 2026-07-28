@@ -109,6 +109,7 @@ fn main() {
             commands::set_system_proxy_enabled,
             commands::set_language,
             commands::open_log_folder,
+            commands::get_warp_identity,
             commands::open_external_url,
             update::check_for_update,
             update::get_cached_update_info,
