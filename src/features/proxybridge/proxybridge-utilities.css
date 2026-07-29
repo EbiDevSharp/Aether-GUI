@@ -1,0 +1,18 @@
+/* این فایل رو import کن داخل src/index.css یا src/App.css اصلی پروژه:
+     @import "./features/proxybridge/proxybridge-utilities.css";
+   یا محتواش رو مستقیم داخل همون فایل global CSS بچسبون.
+   اگه پروژه از قبل کامپوننت‌های shadcn/ui (Button, Input, Select) داره،
+   می‌تونی به‌جای این کلاس‌ها همون کامپوننت‌ها رو توی RuleFormDialog و
+   ProxyConfigFormDialog جایگزین کنی؛ این‌ها فقط یک fallback ساده و مستقل‌ان. */
+
+.input {
+  @apply w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring;
+}
+
+.btn-primary {
+  @apply rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-50;
+}
+
+.btn-secondary {
+  @apply rounded-md border px-3 py-1.5 text-sm hover:bg-muted;
+}

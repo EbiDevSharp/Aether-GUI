@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion, MotionConfig } from "motion/react";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { ConnectButton } from "@/components/ConnectButton";
 import { ConnectionStatusLine } from "@/components/ConnectionStatusLine";
 import { SystemProxyToggle } from "@/components/SystemProxyToggle";
@@ -9,6 +10,7 @@ import { AmbientBackground } from "@/components/AmbientBackground";
 import { SidecarErrorScreen } from "@/components/SidecarErrorScreen";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TitleBar } from "@/components/TitleBar";
+import { ProxyBridgePage } from "@/features/proxybridge/ProxyBridgePage";
 import { initConnectionListeners, useConnectionStore } from "@/state/connectionStore";
 import { initUpdateListeners } from "@/state/updateStore";
 
@@ -18,6 +20,25 @@ const SCREEN_TRANSITION = {
   exit: { opacity: 0, y: -4 },
   transition: { duration: 0.16, ease: [0.22, 1, 0.36, 1] as const },
 };
+
+async function openProxyBridgeWindow() {
+  const existing = await WebviewWindow.getByLabel("proxybridge");
+  if (existing) {
+    await existing.setFocus();
+    return;
+  }
+  new WebviewWindow("proxybridge", {
+    url: "index.html#/proxybridge",
+    title: "Proxy Bridge",
+    width: 960,
+    height: 640,
+    minWidth: 760,
+    minHeight: 480,
+    resizable: true,
+    decorations: true,
+    center: true,
+  });
+}
 
 function MainScreen() {
   return (
@@ -38,24 +59,48 @@ function MainScreen() {
         </div>
         <AdvancedPanel />
         <ExpertPanel />
+        <button
+          onClick={openProxyBridgeWindow}
+          className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          Proxy Bridge (Proxy List / Rules)
+        </button>
       </div>
     </div>
   );
 }
 
 export function App() {
+  // پنجره‌ی «proxybridge» همون index.html رو با هش #/proxybridge بار می‌کنه
+  // (window.tsx جدا نساختیم که بیلد config دست‌نخورده بمونه). این‌جا فقط
+  // تشخیص می‌دیم کدوم پنجره‌ایم و کروم/چیدمان کاملاً متفاوتی رندر می‌کنیم.
+  const [isProxyBridgeWindow] = useState(() =>
+    window.location.hash.startsWith("#/proxybridge"),
+  );
+
   const sidecarError = useConnectionStore((s) => s.sidecarError);
   const retryAfterSidecarError = useConnectionStore((s) => s.retryAfterSidecarError);
   const connect = useConnectionStore((s) => s.connect);
 
   useEffect(() => {
+    if (isProxyBridgeWindow) return; // این listener ها فقط برای پنجره‌ی اصلی Aether لازمن
     const cleanup = initConnectionListeners();
     const updateCleanup = initUpdateListeners();
     return () => {
       void cleanup.then((unlisten) => unlisten());
       void updateCleanup.then((unlisten) => unlisten());
     };
-  }, []);
+  }, [isProxyBridgeWindow]);
+
+  if (isProxyBridgeWindow) {
+    return (
+      <TooltipProvider>
+        <div className="h-svh w-full overflow-hidden bg-background">
+          <ProxyBridgePage />
+        </div>
+      </TooltipProvider>
+    );
+  }
 
   return (
     <TooltipProvider>

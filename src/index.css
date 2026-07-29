@@ -4,7 +4,7 @@
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/jetbrains-mono";
 @import "@fontsource-variable/vazirmatn";
-
+@import "./features/proxybridge/proxybridge-utilities.css";
 @theme inline {
     --font-heading: var(--font-sans);
     --font-sans: 'Inter Variable', system-ui, sans-serif;
