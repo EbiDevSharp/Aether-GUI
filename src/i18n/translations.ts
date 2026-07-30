@@ -66,6 +66,14 @@ export const translations = {
       tooltip:
         "Routes Windows' system-wide proxy through the tunnel whenever it's up. Turn this off to keep the tunnel connected without changing your system proxy — useful if you only want specific apps to use it.",
     },
+    bridgeToggle: {
+      label: "Route via Bridge",
+      tooltip:
+        "Turns on the Rules engine (WinDivert-based) so traffic is routed, blocked, or sent direct per-app/host/port exactly as configured in the Rules tab — including apps that don't support a system proxy at all. Independent of System Proxy above and of the Connect button.",
+      needsElevationTooltip:
+        "Needs administrator access to intercept traffic. Turning this on will restart Aether as Administrator (Windows will ask for confirmation).",
+      errorTooltip: (message: string) => `Couldn't start: ${message}`,
+    },
     advanced: {
       toggle: "Advanced",
       protocol: "Protocol",
@@ -237,6 +245,8 @@ export const translations = {
         colEnabled: "Enabled",
         yes: "Yes",
         no: "No",
+        enableRule: "Enable this rule",
+        disableRule: "Disable this rule",
         edit: "Edit",
         delete: "Delete",
         orderNote:
@@ -387,6 +397,14 @@ export const translations = {
       label: "پراکسی سیستم",
       tooltip:
         "پراکسی سراسری ویندوز را — تا وقتی تونل فعاله — از مسیر تونل عبور می‌ده. اگه می‌خوای تونل وصل بمونه ولی پراکسی سیستم عوض نشه (مثلاً چون فقط چند برنامه‌ی خاص باید ازش استفاده کنن)، این رو خاموش کن.",
+    },
+    bridgeToggle: {
+      label: "روت از طریق بریج",
+      tooltip:
+        "موتور قوانین (بر پایه‌ی WinDivert) رو روشن می‌کنه تا ترافیک دقیقاً طبق تنظیماتی که تو تب «قوانین» چیدی — بر اساس برنامه/هاست/پورت — پراکسی، بلاک یا مستقیم بشه؛ حتی برنامه‌هایی که اصلاً از پراکسی سیستم پشتیبانی نمی‌کنن. مستقل از «پراکسی سیستم» بالا و از دکمه‌ی اتصاله.",
+      needsElevationTooltip:
+        "برای رهگیری ترافیک نیاز به دسترسی ادمین داره. با روشن‌کردنش، Aether با دسترسی Administrator ری‌استارت می‌شه (ویندوز ازت تأیید می‌خواد).",
+      errorTooltip: (message: string) => `راه‌اندازی نشد: ${message}`,
     },
     advanced: {
       toggle: "تنظیمات پیشرفته",
@@ -558,6 +576,8 @@ export const translations = {
         colEnabled: "فعال",
         yes: "بله",
         no: "خیر",
+        enableRule: "فعال‌کردن این قانون",
+        disableRule: "غیرفعال‌کردن این قانون",
         edit: "ویرایش",
         delete: "حذف",
         orderNote:

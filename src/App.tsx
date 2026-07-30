@@ -14,6 +14,7 @@ import { RulesTab } from "@/components/tabs/RulesTab";
 import { LogsTab } from "@/components/tabs/LogsTab";
 import { initConnectionListeners, useConnectionStore } from "@/state/connectionStore";
 import { initUpdateListeners } from "@/state/updateStore";
+import { useProxyBridgeStore } from "@/store/proxybridge-store";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const SCREEN_TRANSITION = {
@@ -105,6 +106,12 @@ export function App() {
   useEffect(() => {
     const cleanup = initConnectionListeners();
     const updateCleanup = initUpdateListeners();
+    // Fired here (not just from ProxyBridgePage on Rules-tab mount) so
+    // BridgeToggle on the Connect tab shows the real running/needsElevation
+    // status right away instead of a stale "idle" until the user happens to
+    // open Rules first. Safe to also still run from ProxyBridgePage — see
+    // the `listenersRegistered` guard in proxybridge-store.ts.
+    void useProxyBridgeStore.getState().init();
     return () => {
       void cleanup.then((unlisten) => unlisten());
       void updateCleanup.then((unlisten) => unlisten());

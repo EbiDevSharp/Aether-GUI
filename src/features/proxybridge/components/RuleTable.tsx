@@ -3,6 +3,7 @@ import { Pencil, Trash2, GripVertical } from "lucide-react";
 import type { ProxyRule } from "@/types/proxybridge";
 import { useProxyBridgeStore } from "@/store/proxybridge-store";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { Switch } from "@/components/ui/switch";
 import { RuleFormDialog } from "./RuleFormDialog";
 
 export type RuleFilter = (rule: ProxyRule) => boolean;
@@ -28,6 +29,7 @@ export function RuleTable({
   const rules = useProxyBridgeStore((s) => s.profile?.ProxyRules ?? []);
   const proxyConfigs = useProxyBridgeStore((s) => s.profile?.ProxyConfigs ?? []);
   const deleteRule = useProxyBridgeStore((s) => s.deleteRule);
+  const updateRule = useProxyBridgeStore((s) => s.updateRule);
   const reorderRule = useProxyBridgeStore((s) => s.reorderRule);
   const { t } = useLanguage();
   const tt = t.proxybridge.ruleTable;
@@ -37,6 +39,19 @@ export function RuleTable({
   );
   const [creating, setCreating] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  // Tracks in-flight toggles so a second click can't fire before the first
+  // one's pb_update_rule round-trip resolves (the switch would otherwise
+  // flicker back to its old state for a moment and invite a double-toggle).
+  const [togglingIndex, setTogglingIndex] = useState<number | null>(null);
+
+  async function toggleEnabled(index: number, rule: ProxyRule) {
+    setTogglingIndex(index);
+    try {
+      await updateRule(index, { ...rule, IsEnabled: !rule.IsEnabled });
+    } finally {
+      setTogglingIndex(null);
+    }
+  }
 
   // We keep the real index because delete/update act on the index of the
   // full array, not the filtered index of this tab.
@@ -105,7 +120,7 @@ export function RuleTable({
                     }
                     setDragIndex(null);
                   }}
-                  className={`border-t ${rowIdx === 0 ? "bg-amber-50/40 dark:bg-amber-950/20" : ""}`}
+                  className={`border-t transition-opacity ${rowIdx === 0 ? "bg-amber-50/40 dark:bg-amber-950/20" : ""} ${!rule.IsEnabled ? "opacity-50" : ""}`}
                 >
                   <td className="cursor-grab px-2 text-muted-foreground">
                     <GripVertical size={14} />
@@ -121,7 +136,14 @@ export function RuleTable({
                     </td>
                   ))}
                   <td className="px-3 py-2">{rule.Protocol}</td>
-                  <td className="px-3 py-2">{rule.IsEnabled ? tt.yes : tt.no}</td>
+                  <td className="px-3 py-2">
+                    <Switch
+                      checked={rule.IsEnabled}
+                      onCheckedChange={() => void toggleEnabled(index, rule)}
+                      disabled={togglingIndex === index}
+                      aria-label={rule.IsEnabled ? tt.disableRule : tt.enableRule}
+                    />
+                  </td>
                   <td className="flex gap-2 px-3 py-2">
                     <button
                       onClick={() => setEditing({ index, rule })}

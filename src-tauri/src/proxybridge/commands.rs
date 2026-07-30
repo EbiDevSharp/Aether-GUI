@@ -225,3 +225,45 @@ pub fn pb_stop(state: State<'_, SharedState>) -> Result<(), String> {
     let shared: SharedState = state.inner().clone();
     process::stop(shared).map_err(|e| e.to_string())
 }
+
+/// ProxyBridge_CLI فقط یک‌بار موقع اجرا پروفایل رو می‌خونه — هیچ hot-reload
+/// یا سیگنالی برای گفتن "پروفایل عوض شد" نداره (هم مستندات رسمی‌ش و هم
+/// خودِ `--help` این رو تایید می‌کنن). یعنی وقتی Bridge از قبل Running هست،
+/// اضافه/ویرایش/حذف/فعال‌غیرفعال‌کردن یک Rule یا Proxy Config فقط روی دیسک
+/// می‌شینه؛ پروسس در حال اجرا همچنان قوانین قدیمی رو اعمال می‌کنه تا یکی
+/// دستی Stop/Start بزنه.
+///
+/// این دستور همون کارو خودکار انجام می‌ده: هر جهش‌دهنده‌ی پروفایل تو
+/// proxybridge-store.ts بعد از موفقیت، اگه در همون لحظه Running/Starting
+/// بودیم، این رو صدا می‌زنه. اگه چیزی در حال اجرا نبود، بی‌سروصدا کاری
+/// نمی‌کنه (چیزی نیست که hot-reload بشه).
+#[tauri::command]
+pub async fn pb_restart_if_running(
+    app: AppHandle,
+    state: State<'_, SharedState>,
+) -> Result<(), String> {
+    let shared: SharedState = state.inner().clone();
+    let was_running = matches!(
+        shared.get_status(),
+        ProxyBridgeStatus::Running | ProxyBridgeStatus::Starting
+    );
+    if !was_running {
+        return Ok(());
+    }
+
+    process::stop(shared.clone()).map_err(|e| e.to_string())?;
+
+    // process::stop() فقط Ctrl+C رو می‌فرسته و برمی‌گرده؛ خروج واقعی پروسس
+    // async و توسط ترد ناظر توی process::start گزارش می‌شه (ببین اون فایل).
+    // پس منتظر می‌مونیم status از Stopping خارج بشه، نه یک تاخیر ثابت حدسی.
+    for _ in 0..50 {
+        if shared.get_status() != ProxyBridgeStatus::Stopping {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
+
+    let resource_dir = app.path().resource_dir().map_err(|e| e.to_string())?;
+    let binary_path = process::cli_binary_path(&resource_dir);
+    process::start(app, shared, binary_path).map_err(|e| e.to_string())
+}

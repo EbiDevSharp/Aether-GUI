@@ -11,11 +11,17 @@ interface ProxyConfigFormDialogProps {
 }
 
 export function ProxyConfigFormDialog({ initial, onClose }: ProxyConfigFormDialogProps) {
-  // Aether's own local SOCKS5 port (Advanced → Local Port, default 1819).
-  // Used to default/sync new proxy-server entries here so ProxyBridge
-  // points at whatever port Aether is actually listening on, instead of a
-  // stale hardcoded 1080.
-  const aetherLocalPort = useConnectionStore((s) => s.profile.local_port);
+  // The port Aether is *actually* listening on right now. When Allow LAN is
+  // off this is just Local Port — but when it's on, Aether binds
+  // lan_port ?? local_port instead (see profiles.rs: `let port =
+  // self.lan_port.unwrap_or(self.local_port)`), so a custom LAN port typed
+  // into the Settings tab has to win here too. Previously this always read
+  // `local_port`, so typing a LAN port never showed up anywhere in Rules —
+  // "Use Aether's local SOCKS5 port" kept quietly pointing at the old port.
+  const localPort = useConnectionStore((s) => s.profile.local_port);
+  const lanAccessEnabled = useConnectionStore((s) => s.profile.lan_access_enabled);
+  const lanPort = useConnectionStore((s) => s.profile.lan_port);
+  const aetherLocalPort = lanAccessEnabled ? (lanPort ?? localPort) : localPort;
 
   const [form, setForm] = useState<Omit<ProxyConfig, "Id">>(
     initial ?? {

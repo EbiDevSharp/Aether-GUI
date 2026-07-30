@@ -53,6 +53,11 @@ export const proxyBridgeApi = {
 
   start: () => invoke<void>("pb_start"),
   stop: () => invoke<void>("pb_stop"),
+  // See pb_restart_if_running's doc comment in commands.rs — ProxyBridge_CLI
+  // has no hot-reload, so this is what actually makes a rule/config change
+  // take effect immediately instead of "next time you Start". No-ops
+  // silently if Bridge isn't currently running.
+  restartIfRunning: () => invoke<void>("pb_restart_if_running"),
 
   onLog: (cb: (log: ProxyBridgeLogLine) => void): Promise<UnlistenFn> =>
     listen<ProxyBridgeLogLine>("proxybridge://log", (e) => cb(e.payload)),

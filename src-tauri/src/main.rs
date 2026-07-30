@@ -151,6 +151,7 @@ fn main() {
             proxybridge::commands::pb_import_profile,
             proxybridge::commands::pb_start,
             proxybridge::commands::pb_stop,
+            proxybridge::commands::pb_restart_if_running,
         ])
         .build(tauri::generate_context!())
         .expect("error building tauri application")
