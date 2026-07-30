@@ -4,7 +4,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import type { EchMode } from "@/types/connection";
 
 /** Locked outside Idle/Error, mirroring ProtocolSelect. The "Custom" config
- * text field itself lives in AdvancedPanel.tsx, shown conditionally when
+ * text field itself lives in components/tabs/ExpertTab.tsx, shown conditionally when
  * this is set to "custom" — kept out of this component so it stays a
  * simple three-way toggle like its siblings. */
 export function EchModeToggle() {

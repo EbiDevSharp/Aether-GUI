@@ -8,7 +8,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 
 const appWindow = getCurrentWindow();
 
-export function TitleBar() {
+export function TitleBar({ hideWindowSizeToggle = false }: { hideWindowSizeToggle?: boolean }) {
   const { t } = useLanguage();
 
   return (
@@ -21,7 +21,11 @@ export function TitleBar() {
       <div className="flex items-center gap-0.5 px-1.5">
         <LanguageSwitcher />
         <ThemeSwitcher />
-        <WindowSizeToggle />
+        {/* Hidden (not just disabled) while the Rules tab is active — that
+          * tab drives the window size itself (App.tsx's set_rules_view
+          * effect), so a Compact/Normal toggle here would either do nothing
+          * visible or fight the Rules-tab resize on the next tab switch. */}
+        {!hideWindowSizeToggle && <WindowSizeToggle />}
         <UpdateMenu />
       </div>
 

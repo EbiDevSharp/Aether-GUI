@@ -24,13 +24,22 @@ use proxybridge::ProxyBridgeState;
 /// size the window is actually created at, this is just what we resize
 /// back to when leaving compact mode (see commands.rs::set_compact_window).
 pub const NORMAL_SIZE: (f64, f64) = (420.0, 640.0);
-/// Small fixed size for `compact_window` — still tall enough for the core
-/// group (Connect button, status line, System Proxy chip) plus the three
-/// collapsed accordion headers (Advanced/Expert/Connection Info) without
-/// needing to scroll in the common case; opening any of those accordions
-/// in compact mode falls back to the normal scrollable behavior
-/// (App.tsx's `justify-[safe_center]`), same as it does at normal size.
+/// Small fixed size for `compact_window` — still tall enough for the
+/// Connect tab's core group (Connect button, status line, System Proxy
+/// chip) plus the tab bar without needing to scroll in the common case.
+/// Other tabs (Settings/Expert/Logs) fall back to their own internal
+/// scrolling at this width, same as at normal size — only the Rules tab
+/// gets a dedicated size of its own (RULES_SIZE below), since its tables
+/// need real width rather than just more scroll room.
 pub const COMPACT_SIZE: (f64, f64) = (300.0, 480.0);
+/// The main window used to stay a fixed 420×640 and the Rules tab's
+/// content (StatusBar + Sidebar + rule tables — see
+/// features/proxybridge/ProxyBridgePage.tsx) lived in its own separate
+/// 960×640 popped-out window instead. Now that Rules is a tab in the same
+/// window, the window itself grows to this size while that tab is active
+/// (see commands.rs::set_rules_view) and shrinks back to NORMAL_SIZE/
+/// COMPACT_SIZE when the user switches to any other tab.
+pub const RULES_SIZE: (f64, f64) = (900.0, 640.0);
 
 fn main() {
     tauri::Builder::default()
@@ -108,6 +117,7 @@ fn main() {
             commands::get_app_settings,
             commands::set_start_minimized,
             commands::set_compact_window,
+            commands::set_rules_view,
             commands::set_auto_connect,
             commands::set_launch_on_startup,
             commands::get_system_proxy_enabled,

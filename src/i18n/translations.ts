@@ -37,6 +37,13 @@ export const translations = {
       disconnect: "Disconnect",
       retryConnection: "Retry connection",
     },
+    tabs: {
+      connect: "Connect",
+      settings: "Settings",
+      expert: "Expert",
+      rules: "Rules",
+      logs: "Logs",
+    },
     status: {
       idlePrimary: "Disconnected",
       idleSecondary: "Click to connect",
@@ -351,6 +358,13 @@ export const translations = {
       cancelConnecting: "لغو اتصال",
       disconnect: "قطع اتصال",
       retryConnection: "تلاش مجدد",
+    },
+    tabs: {
+      connect: "اتصال",
+      settings: "تنظیمات",
+      expert: "تخصصی",
+      rules: "قوانین",
+      logs: "لاگ‌ها",
     },
     status: {
       idlePrimary: "قطع است",

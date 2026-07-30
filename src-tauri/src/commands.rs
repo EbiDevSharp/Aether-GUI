@@ -107,6 +107,31 @@ pub fn set_compact_window(app: AppHandle, enabled: bool) -> Result<(), AetherErr
     Ok(())
 }
 
+/// The Rules tab (rule tables + sidebar — formerly its own separate
+/// popped-out "Proxy Bridge" window) needs more width than the compact
+/// Connect/Settings/Expert/Logs tabs do. Rather than make the whole window
+/// permanently wide, the frontend calls this on every tab switch: `true`
+/// when navigating *to* Rules, `false` when navigating *away* from it.
+/// Leaving Rules restores whatever size the user had chosen before
+/// (`stored.compact_window`) instead of always snapping back to
+/// `NORMAL_SIZE` — so toggling Compact window in Settings still applies
+/// once you're back on a non-Rules tab.
+#[tauri::command]
+pub fn set_rules_view(app: AppHandle, active: bool) -> Result<(), AetherError> {
+    if let Some(window) = app.get_webview_window("main") {
+        let size = if active {
+            crate::RULES_SIZE
+        } else {
+            let stored = settings::load(&app);
+            if stored.compact_window { crate::COMPACT_SIZE } else { crate::NORMAL_SIZE }
+        };
+        window
+            .set_size(tauri::LogicalSize::new(size.0, size.1))
+            .map_err(|e| AetherError::Internal(e.to_string()))?;
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn set_launch_on_startup(app: AppHandle, enabled: bool) -> Result<(), AetherError> {
     let autostart = app.autolaunch();
