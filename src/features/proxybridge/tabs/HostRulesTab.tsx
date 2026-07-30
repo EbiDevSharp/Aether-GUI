@@ -1,23 +1,23 @@
 import { RuleTable } from "../components/RuleTable";
+import { useLanguage } from "@/i18n/LanguageContext";
 import type { ProxyRule } from "@/types/proxybridge";
 
 export function HostRulesTab() {
+  const { t } = useLanguage();
+  const tt = t.proxybridge.hostRules;
+
   return (
     <div className="flex h-full flex-col gap-4">
       <div>
-        <h2 className="text-lg font-medium">🌐 Host Rules</h2>
-        <p className="text-sm text-muted-foreground">
-          قوانینی که تمرکزشون روی هاست/IP مقصده (IPv4، IPv6، CIDR، Range). این‌ها همون
-          Ruleهای اصلی هستن؛ این نما فقط اونایی که TargetHosts مشخص (نه *) دارن رو
-          برجسته و اول نشون می‌ده.
-        </p>
+        <h2 className="text-lg font-medium">{tt.heading}</h2>
+        <p className="text-sm text-muted-foreground">{tt.description}</p>
       </div>
       <RuleTable
         title=""
         emphasize="host"
         filter={(r: ProxyRule) => r.TargetHosts !== "*" && r.TargetHosts.trim() !== ""}
         defaultsForNewRule={{ TargetHosts: "" }}
-        emptyHint="هنوز قانونی بر اساس هاست مشخص تعریف نشده."
+        emptyHint={tt.emptyHint}
       />
     </div>
   );

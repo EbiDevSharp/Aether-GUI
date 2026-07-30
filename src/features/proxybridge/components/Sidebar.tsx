@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export type ProxyBridgeTabId =
   | "proxy-list"
@@ -9,16 +10,15 @@ export type ProxyBridgeTabId =
 
 interface SidebarItem {
   id: ProxyBridgeTabId;
-  label: string;
   icon: string;
 }
 
 const items: SidebarItem[] = [
-  { id: "proxy-list", label: "Proxy List", icon: "🟢" },
-  { id: "bypass-list", label: "Bypass List", icon: "🔴" },
-  { id: "host-rules", label: "Host Rules", icon: "🌐" },
-  { id: "port-rules", label: "Port Rules", icon: "🔌" },
-  { id: "application-rules", label: "Application Rules", icon: "📦" },
+  { id: "proxy-list", icon: "🟢" },
+  { id: "bypass-list", icon: "🔴" },
+  { id: "host-rules", icon: "🌐" },
+  { id: "port-rules", icon: "🔌" },
+  { id: "application-rules", icon: "📦" },
 ];
 
 export function Sidebar({
@@ -28,8 +28,20 @@ export function Sidebar({
   active: ProxyBridgeTabId;
   onSelect: (id: ProxyBridgeTabId) => void;
 }): ReactNode {
+  const { t } = useLanguage();
+  const labels: Record<ProxyBridgeTabId, string> = {
+    "proxy-list": t.proxybridge.sidebar.proxyList,
+    "bypass-list": t.proxybridge.sidebar.bypassList,
+    "host-rules": t.proxybridge.sidebar.hostRules,
+    "port-rules": t.proxybridge.sidebar.portRules,
+    "application-rules": t.proxybridge.sidebar.applicationRules,
+  };
+
   return (
-    <nav className="flex w-52 shrink-0 flex-col gap-1 border-l p-3">
+    // border-e (logical) instead of border-l: sits on the side facing the
+    // content in both directions, so it doesn't end up on the wrong edge
+    // when the page flips to rtl for Persian.
+    <nav className="flex w-52 shrink-0 flex-col gap-1 border-e p-3">
       {items.map((item) => (
         <button
           key={item.id}
@@ -41,7 +53,7 @@ export function Sidebar({
           }`}
         >
           <span>{item.icon}</span>
-          {item.label}
+          {labels[item.id]}
         </button>
       ))}
     </nav>

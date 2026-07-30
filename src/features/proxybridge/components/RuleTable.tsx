@@ -2,16 +2,17 @@ import { useMemo, useState } from "react";
 import { Pencil, Trash2, GripVertical } from "lucide-react";
 import type { ProxyRule } from "@/types/proxybridge";
 import { useProxyBridgeStore } from "@/store/proxybridge-store";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { RuleFormDialog } from "./RuleFormDialog";
 
 export type RuleFilter = (rule: ProxyRule) => boolean;
 
 interface RuleTableProps {
-  /** فیلتر می‌کنه کدوم rule ها توی این تب نشون داده بشن (بدون تغییر دیتای واقعی). */
+  /** Filters which rules show up in this tab (doesn't touch the real data). */
   filter?: RuleFilter;
-  /** کدوم ستون رو اول/برجسته نشون بده: process | host | port | action */
+  /** Which column to show first/highlighted: process | host | port | action */
   emphasize?: "process" | "host" | "port" | "action";
-  /** مقدار پیش‌فرض هنگام ساخت Rule جدید از این تب (مثلاً Bypass همیشه Action=DIRECT). */
+  /** Default value when creating a new rule from this tab (e.g. Bypass always starts as Action=DIRECT). */
   defaultsForNewRule?: Partial<ProxyRule>;
   title: string;
   emptyHint: string;
@@ -28,6 +29,8 @@ export function RuleTable({
   const proxyConfigs = useProxyBridgeStore((s) => s.profile?.ProxyConfigs ?? []);
   const deleteRule = useProxyBridgeStore((s) => s.deleteRule);
   const reorderRule = useProxyBridgeStore((s) => s.reorderRule);
+  const { t } = useLanguage();
+  const tt = t.proxybridge.ruleTable;
 
   const [editing, setEditing] = useState<{ index: number; rule: ProxyRule } | null>(
     null,
@@ -35,8 +38,8 @@ export function RuleTable({
   const [creating, setCreating] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
-  // index واقعی رو نگه می‌داریم چون حذف/آپدیت روی index کل آرایه کار می‌کنه،
-  // نه index فیلترشده‌ی این تب.
+  // We keep the real index because delete/update act on the index of the
+  // full array, not the filtered index of this tab.
   const rows = useMemo(
     () =>
       rules
@@ -51,10 +54,10 @@ export function RuleTable({
   ];
 
   const columnLabel: Record<string, string> = {
-    process: "برنامه",
-    host: "هاست مقصد",
-    port: "پورت مقصد",
-    action: "عملیات",
+    process: tt.colProcess,
+    host: tt.colHost,
+    port: tt.colPort,
+    action: tt.colAction,
   };
 
   return (
@@ -65,7 +68,7 @@ export function RuleTable({
           onClick={() => setCreating(true)}
           className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90"
         >
-          + قانون جدید
+          {tt.newRule}
         </button>
       </div>
 
@@ -76,7 +79,7 @@ export function RuleTable({
       ) : (
         <div className="overflow-hidden rounded-md border">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-right">
+            <thead className="bg-muted/50 text-start">
               <tr>
                 <th className="w-8"></th>
                 {columnOrder.map((c) => (
@@ -84,8 +87,8 @@ export function RuleTable({
                     {columnLabel[c]}
                   </th>
                 ))}
-                <th className="px-3 py-2 font-medium">پروتکل</th>
-                <th className="px-3 py-2 font-medium">فعال</th>
+                <th className="px-3 py-2 font-medium">{tt.colProtocol}</th>
+                <th className="px-3 py-2 font-medium">{tt.colEnabled}</th>
                 <th className="w-20"></th>
               </tr>
             </thead>
@@ -108,29 +111,29 @@ export function RuleTable({
                     <GripVertical size={14} />
                   </td>
                   {columnOrder.map((c) => (
-                    <td key={c} className="px-3 py-2 font-mono text-xs">
+                    <td key={c} className="px-3 py-2 font-mono text-xs" dir="ltr">
                       {c === "process" && (rule.ProcessName || "*")}
                       {c === "host" && (rule.TargetHosts || "*")}
                       {c === "port" && (rule.TargetPorts || "*")}
                       {c === "action" && (
-                        <ActionBadge rule={rule} proxyConfigs={proxyConfigs} />
+                        <ActionBadge rule={rule} proxyConfigs={proxyConfigs} tt={tt} />
                       )}
                     </td>
                   ))}
                   <td className="px-3 py-2">{rule.Protocol}</td>
-                  <td className="px-3 py-2">{rule.IsEnabled ? "بله" : "خیر"}</td>
+                  <td className="px-3 py-2">{rule.IsEnabled ? tt.yes : tt.no}</td>
                   <td className="flex gap-2 px-3 py-2">
                     <button
                       onClick={() => setEditing({ index, rule })}
                       className="text-muted-foreground hover:text-foreground"
-                      title="ویرایش"
+                      title={tt.edit}
                     >
                       <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => deleteRule(index)}
                       className="text-destructive hover:opacity-80"
-                      title="حذف"
+                      title={tt.delete}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -142,10 +145,7 @@ export function RuleTable({
         </div>
       )}
 
-      <p className="text-xs text-muted-foreground">
-        ترتیب مهمه: قانون‌ها از بالا به پایین اجرا می‌شن و اولین match برنده‌ست.
-        با کشیدن (drag) ردیف‌ها می‌تونی ترتیب رو عوض کنی.
-      </p>
+      <p className="text-xs text-muted-foreground">{tt.orderNote}</p>
 
       {creating && (
         <RuleFormDialog
@@ -167,15 +167,17 @@ export function RuleTable({
 function ActionBadge({
   rule,
   proxyConfigs,
+  tt,
 }: {
   rule: ProxyRule;
   proxyConfigs: { Id: number; Host: string; Port: string }[];
+  tt: { firstAvailableConfig: string };
 }) {
   if (rule.Action === "PROXY") {
     const cfg = proxyConfigs.find((c) => c.Id === rule.ProxyConfigId);
     return (
       <span className="rounded bg-blue-100 px-1.5 py-0.5 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
-        PROXY {cfg ? `(${cfg.Host}:${cfg.Port})` : "(اولین کانفیگ موجود)"}
+        PROXY {cfg ? `(${cfg.Host}:${cfg.Port})` : tt.firstAvailableConfig}
       </span>
     );
   }

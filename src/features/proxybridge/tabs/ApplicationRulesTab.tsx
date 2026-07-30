@@ -1,22 +1,23 @@
 import { RuleTable } from "../components/RuleTable";
+import { useLanguage } from "@/i18n/LanguageContext";
 import type { ProxyRule } from "@/types/proxybridge";
 
 export function ApplicationRulesTab() {
+  const { t } = useLanguage();
+  const tt = t.proxybridge.applicationRules;
+
   return (
     <div className="flex h-full flex-col gap-4">
       <div>
-        <h2 className="text-lg font-medium">📦 Application Rules</h2>
-        <p className="text-sm text-muted-foreground">
-          قوانینی که تمرکزشون روی یک برنامه‌ی مشخصه (به‌جای *). با دکمه‌ی «انتخاب...»
-          توی دیالوگ می‌تونی مستقیم exe رو از دیسک انتخاب کنی.
-        </p>
+        <h2 className="text-lg font-medium">{tt.heading}</h2>
+        <p className="text-sm text-muted-foreground">{tt.description}</p>
       </div>
       <RuleTable
         title=""
         emphasize="process"
         filter={(r: ProxyRule) => r.ProcessName !== "*" && r.ProcessName.trim() !== ""}
         defaultsForNewRule={{ ProcessName: "" }}
-        emptyHint="هنوز قانونی برای یک برنامه‌ی مشخص تعریف نشده."
+        emptyHint={tt.emptyHint}
       />
     </div>
   );

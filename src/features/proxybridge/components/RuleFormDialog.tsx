@@ -3,10 +3,11 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { ListChecks } from "lucide-react";
 import type { Protocol, ProxyRule, RuleAction } from "@/types/proxybridge";
 import { useProxyBridgeStore } from "@/store/proxybridge-store";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { ProcessPickerDialog } from "./ProcessPickerDialog";
 
 interface RuleFormDialogProps {
-  index?: number; // اگه تعریف شده باشه یعنی ویرایش، وگرنه ساخت جدید
+  index?: number; // defined => editing, otherwise creating a new rule
   initial?: Partial<ProxyRule>;
   onClose: () => void;
 }
@@ -26,6 +27,8 @@ export function RuleFormDialog({ index, initial, onClose }: RuleFormDialogProps)
   const proxyConfigs = useProxyBridgeStore((s) => s.profile?.ProxyConfigs ?? []);
   const addRule = useProxyBridgeStore((s) => s.addRule);
   const updateRule = useProxyBridgeStore((s) => s.updateRule);
+  const { t } = useLanguage();
+  const tt = t.proxybridge.ruleForm;
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [showProcessPicker, setShowProcessPicker] = useState(false);
@@ -65,55 +68,58 @@ export function RuleFormDialog({ index, initial, onClose }: RuleFormDialogProps)
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-md rounded-lg border bg-background p-5 shadow-xl">
         <h3 className="mb-4 text-base font-medium">
-          {index !== undefined ? "ویرایش قانون" : "قانون جدید"}
+          {index !== undefined ? tt.editTitle : tt.newTitle}
         </h3>
 
         <div className="space-y-3">
-          <Field label="برنامه (Process)" hint="مثال: *  یا  chrome.exe  یا  steam*.exe">
+          <Field label={tt.process} hint={tt.processHint}>
             <div className="flex gap-2">
               <input
                 className="input"
+                dir="ltr"
                 value={form.ProcessName}
                 onChange={(e) => setForm((f) => ({ ...f, ProcessName: e.target.value }))}
               />
               <button
                 type="button"
                 onClick={() => setShowProcessPicker(true)}
-                title="انتخاب از برنامه‌های در حال اجرا"
+                title={tt.pickFromRunning}
                 className="btn-secondary flex shrink-0 items-center gap-1"
               >
                 <ListChecks size={14} />
-                در حال اجرا
+                {tt.running}
               </button>
               <button
                 type="button"
                 onClick={handleBrowse}
-                title="انتخاب فایل exe از دیسک"
+                title={tt.pickExeFile}
                 className="btn-secondary shrink-0"
               >
-                فایل...
+                {tt.browseFile}
               </button>
             </div>
           </Field>
 
-          <Field label="هاست مقصد" hint="مثال: *  یا  192.168.*.*  یا  10.0.0.1-10.0.0.255">
+          <Field label={tt.targetHost} hint={tt.targetHostHint}>
             <input
               className="input"
+              dir="ltr"
               value={form.TargetHosts}
               onChange={(e) => setForm((f) => ({ ...f, TargetHosts: e.target.value }))}
             />
           </Field>
 
-          <Field label="پورت مقصد" hint="مثال: *  یا  80; 443  یا  1000-2000">
+          <Field label={tt.targetPort} hint={tt.targetPortHint}>
             <input
               className="input"
+              dir="ltr"
               value={form.TargetPorts}
               onChange={(e) => setForm((f) => ({ ...f, TargetPorts: e.target.value }))}
             />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="پروتکل">
+            <Field label={tt.protocol}>
               <select
                 className="input"
                 value={form.Protocol}
@@ -123,11 +129,11 @@ export function RuleFormDialog({ index, initial, onClose }: RuleFormDialogProps)
               >
                 <option value="TCP">TCP</option>
                 <option value="UDP">UDP</option>
-                <option value="BOTH">هردو</option>
+                <option value="BOTH">{tt.both}</option>
               </select>
             </Field>
 
-            <Field label="عملیات">
+            <Field label={tt.actionLabel}>
               <select
                 className="input"
                 value={form.Action}
@@ -135,19 +141,17 @@ export function RuleFormDialog({ index, initial, onClose }: RuleFormDialogProps)
                   setForm((f) => ({ ...f, Action: e.target.value as RuleAction }))
                 }
               >
-                <option value="DIRECT">DIRECT — مستقیم</option>
-                <option value="BLOCK">BLOCK — مسدود</option>
-                <option value="PROXY">PROXY — از طریق پراکسی</option>
+                <option value="DIRECT">{tt.directOption}</option>
+                <option value="BLOCK">{tt.blockOption}</option>
+                <option value="PROXY">{tt.proxyOption}</option>
               </select>
             </Field>
           </div>
 
           {form.Action === "PROXY" && (
-            <Field label="کدوم سرور پراکسی؟">
+            <Field label={tt.whichServer}>
               {proxyConfigs.length === 0 ? (
-                <p className="text-xs text-amber-600">
-                  اول از تب «Proxy List» یک سرور پراکسی اضافه کن.
-                </p>
+                <p className="text-xs text-amber-600">{tt.noServersHint}</p>
               ) : (
                 <select
                   className="input"
@@ -159,7 +163,7 @@ export function RuleFormDialog({ index, initial, onClose }: RuleFormDialogProps)
                     }))
                   }
                 >
-                  <option value="">(اولین موجود به‌صورت خودکار)</option>
+                  <option value="">{tt.autoFirst}</option>
                   {proxyConfigs.map((c) => (
                     <option key={c.Id} value={c.Id}>
                       #{c.Id} — {c.Type.toUpperCase()} {c.Host}:{c.Port}
@@ -176,7 +180,7 @@ export function RuleFormDialog({ index, initial, onClose }: RuleFormDialogProps)
               checked={form.IsEnabled}
               onChange={(e) => setForm((f) => ({ ...f, IsEnabled: e.target.checked }))}
             />
-            فعال باشه
+            {tt.enabled}
           </label>
         </div>
 
@@ -184,10 +188,10 @@ export function RuleFormDialog({ index, initial, onClose }: RuleFormDialogProps)
 
         <div className="mt-5 flex justify-end gap-2">
           <button onClick={onClose} className="btn-secondary">
-            انصراف
+            {tt.cancel}
           </button>
           <button onClick={handleSave} disabled={saving} className="btn-primary">
-            {saving ? "در حال ذخیره..." : "ذخیره"}
+            {saving ? tt.saving : tt.save}
           </button>
         </div>
       </div>

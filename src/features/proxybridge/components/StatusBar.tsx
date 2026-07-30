@@ -1,16 +1,7 @@
 import { Play, Square, ShieldAlert, Terminal } from "lucide-react";
 import { useState } from "react";
 import { useProxyBridgeStore } from "@/store/proxybridge-store";
-
-const statusLabel: Record<string, string> = {
-  idle: "غیرفعال",
-  needsElevation: "نیاز به دسترسی ادمین",
-  starting: "در حال راه‌اندازی...",
-  running: "در حال اجرا",
-  stopping: "در حال توقف...",
-  stopped: "متوقف شد",
-  error: "خطا",
-};
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const statusColor: Record<string, string> = {
   idle: "bg-muted text-muted-foreground",
@@ -29,14 +20,16 @@ export function StatusBar() {
   const relaunchElevated = useProxyBridgeStore((s) => s.relaunchElevated);
   const logs = useProxyBridgeStore((s) => s.logs);
   const [showLogs, setShowLogs] = useState(false);
+  const { t } = useLanguage();
 
+  const statusLabel = t.proxybridge.status;
   const isRunning = status === "running" || status === "starting";
 
   return (
     <div className="border-b">
       <div className="flex items-center gap-3 px-4 py-3">
         <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusColor[status]}`}>
-          {statusLabel[status] ?? status}
+          {statusLabel[status as keyof typeof statusLabel] ?? status}
         </span>
 
         {status === "needsElevation" ? (
@@ -45,7 +38,7 @@ export function StatusBar() {
             className="flex items-center gap-1.5 rounded-md bg-amber-600 px-3 py-1.5 text-sm text-white hover:bg-amber-700"
           >
             <ShieldAlert size={14} />
-            ری‌استارت با دسترسی Administrator
+            {t.proxybridge.restartElevated}
           </button>
         ) : isRunning ? (
           <button
@@ -53,7 +46,7 @@ export function StatusBar() {
             className="flex items-center gap-1.5 rounded-md bg-destructive px-3 py-1.5 text-sm text-destructive-foreground hover:opacity-90"
           >
             <Square size={14} />
-            توقف
+            {t.proxybridge.stop}
           </button>
         ) : (
           <button
@@ -61,23 +54,26 @@ export function StatusBar() {
             className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90"
           >
             <Play size={14} />
-            شروع روتینگ ترافیک
+            {t.proxybridge.startRouting}
           </button>
         )}
 
         <button
           onClick={() => setShowLogs((v) => !v)}
-          className="mr-auto flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          // ms-auto (logical) instead of mr-auto: pushes to the far end of
+          // the row regardless of ltr/rtl, so it stays put when the page
+          // direction flips with the language.
+          className="ms-auto flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <Terminal size={14} />
-          لاگ زنده ({logs.length})
+          {t.proxybridge.liveLogs(logs.length)}
         </button>
       </div>
 
       {showLogs && (
         <div className="max-h-48 overflow-y-auto border-t bg-black/90 p-3 font-mono text-xs text-green-400">
           {logs.length === 0 ? (
-            <p className="text-muted-foreground">هنوز لاگی دریافت نشده.</p>
+            <p className="text-muted-foreground">{t.proxybridge.noLogsYet}</p>
           ) : (
             logs.map((l, i) => (
               <div key={i} className={l.stream === "stderr" ? "text-red-400" : undefined}>
