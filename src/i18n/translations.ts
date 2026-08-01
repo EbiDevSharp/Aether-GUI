@@ -164,6 +164,32 @@ export const translations = {
       verboseLogsTooltip:
         "Aether ≥1.3.0: much more detailed logs — exact handshake timing, every validation step, the real reason behind a retry. The most useful thing to turn on when trying to figure out why a connection keeps dropping; saved to the same log file either way (see the log folder button in Advanced → Logs), just with a lot more detail in it.",
     },
+    zeroTrust: {
+      toggle: "Zero Trust",
+      toggleTooltip:
+        "Aether ≥1.5.0: enrol as a managed device on a Cloudflare Zero Trust organization instead of connecting as an anonymous consumer WARP device. Only useful if your organization actually runs a Zero Trust team — leave off otherwise.",
+      team: "Team name",
+      teamTooltip: "Your organization's Zero Trust team, e.g. \"acme\" for acme.cloudflareaccess.com.",
+      teamPlaceholder: "e.g. acme",
+      authMethod: "Sign-in method",
+      authEmail: "Email",
+      authServiceToken: "Service token",
+      authAccessToken: "Access token",
+      email: "Email",
+      emailTooltip: "A one-time code is sent here; Aether then prompts for it when connecting.",
+      emailPlaceholder: "you@company.com",
+      accessId: "Access ID",
+      accessSecret: "Access secret",
+      serviceTokenTooltip:
+        "An Access service token, for headless sign-in without a mailbox — both fields are required together.",
+      accessToken: "Access token",
+      accessTokenTooltip:
+        "A JWT already obtained by signing in at <team>.cloudflareaccess.com/warp.",
+      accessTokenPlaceholder: "Paste the token",
+      gateway: "Route through Gateway",
+      gatewayTooltip:
+        "Aether ≥1.5.0: routes HTTP/HTTPS through the organization's Gateway proxy, so its filtering and logging apply. Off by default — it adds a hop inside the tunnel and logs your browsing. Only takes effect once Team name above is filled in.",
+    },
     noizeProfile: {
       off: "Off",
       light: "Light",
@@ -494,6 +520,32 @@ export const translations = {
       verboseLogs: "لاگ‌های کامل (Verbose)",
       verboseLogsTooltip:
         "Aether نسخه‌ی ۱.۳.۰ به بعد: لاگ‌های خیلی جزئی‌تر — زمان دقیق هر مرحله‌ی handshake، هر قدم validation، دلیل واقعی هر retry. مفیدترین گزینه وقتی می‌خوای بفهمی چرا اتصال هی قطع می‌شه؛ چه روشن باشه چه نه رو همون فایل لاگ ذخیره می‌شه (دکمه‌ی پوشه‌ی لاگ تو Advanced ← Logs)، فقط با جزئیات خیلی بیشتر.",
+    },
+    zeroTrust: {
+      toggle: "Zero Trust",
+      toggleTooltip:
+        "Aether نسخه‌ی ۱.۵.۰ به بعد: به‌جای وصل‌شدن به‌عنوان یه دیوایس WARP مصرفی و ناشناس، به‌عنوان دیوایس مدیریت‌شده‌ی یه سازمان Zero Trust در کلادفلر وارد می‌شی. فقط وقتی به‌دردت می‌خوره که سازمانت واقعاً یه تیم Zero Trust داره — در غیر این صورت خاموش بذارش.",
+      team: "نام تیم",
+      teamTooltip: "نام تیم Zero Trust سازمانت، مثلاً «acme» برای acme.cloudflareaccess.com.",
+      teamPlaceholder: "مثلاً acme",
+      authMethod: "روش ورود",
+      authEmail: "ایمیل",
+      authServiceToken: "توکن سرویس",
+      authAccessToken: "توکن دسترسی",
+      email: "ایمیل",
+      emailTooltip: "یه کد یک‌بارمصرف به این ایمیل ارسال می‌شه؛ موقع اتصال Aether خودش ازت می‌خوادش.",
+      emailPlaceholder: "you@company.com",
+      accessId: "Access ID",
+      accessSecret: "Access Secret",
+      serviceTokenTooltip:
+        "یه توکن سرویس Access، برای ورود بدون نیاز به ایمیل (مناسب سرور/CI) — هر دو فیلد باید با هم پر بشن.",
+      accessToken: "توکن دسترسی",
+      accessTokenTooltip:
+        "یه JWT که از قبل با ورود به آدرس <team>.cloudflareaccess.com/warp گرفتی.",
+      accessTokenPlaceholder: "توکن رو اینجا بچسبون",
+      gateway: "عبور از Gateway",
+      gatewayTooltip:
+        "Aether نسخه‌ی ۱.۵.۰ به بعد: ترافیک HTTP/HTTPS رو از پراکسی Gateway سازمان رد می‌کنه تا فیلترینگ و لاگ‌گیری اون اعمال بشه. پیش‌فرض خاموشه — چون یه هاپ اضافه به تونل اضافه می‌کنه و مرورت رو لاگ می‌کنه. فقط وقتی «نام تیم» بالا پر شده باشه اثر داره.",
     },
     noizeProfile: {
       off: "خاموش",

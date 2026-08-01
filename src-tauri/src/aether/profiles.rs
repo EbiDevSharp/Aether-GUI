@@ -141,6 +141,25 @@ impl Default for EchMode {
     }
 }
 
+/// Aether ≥1.5.0: how to sign in to a Cloudflare Zero Trust organization
+/// (`--team <name>` plus one of these). See Docs/GUIDE.fa.md upstream:
+/// Email sends a one-time code interactively, ServiceToken is for
+/// headless/CI use (`--access-id` + `--access-secret`), AccessToken accepts
+/// a JWT already obtained by signing in at `<team>.cloudflareaccess.com/warp`.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum ZeroTrustAuthMethod {
+    Email,
+    ServiceToken,
+    AccessToken,
+}
+
+impl Default for ZeroTrustAuthMethod {
+    fn default() -> Self {
+        ZeroTrustAuthMethod::Email
+    }
+}
+
 /// `local_port` and `noize_profile` ARE user-configurable via CLI flags
 /// (`--bind`, `--noize`) even though neither is one of the three interactive
 /// prompts (protocol / scan mode / IP version) Aether's own setup asks —
@@ -219,6 +238,39 @@ pub struct ConnectionProfile {
     /// mysterious drop (see filelog.rs for where these end up on disk).
     #[serde(default)]
     pub verbose_logs: bool,
+    /// Aether ≥1.5.0: enrol as a managed device on a Cloudflare Zero Trust
+    /// organization (`--team <name>`) instead of connecting as an anonymous
+    /// consumer WARP device. Off means none of the `zero_trust_*`/`gateway_enabled`
+    /// fields are passed at all, regardless of what's typed into them —
+    /// mirrors how `ech_mode: Off` behaves for the ECH fields above.
+    #[serde(default)]
+    pub zero_trust_enabled: bool,
+    /// The organization's team name, e.g. `acme` for `acme.cloudflareaccess.com`.
+    #[serde(default)]
+    pub zero_trust_team: String,
+    #[serde(default)]
+    pub zero_trust_auth_method: ZeroTrustAuthMethod,
+    /// `--access-email`: sends a one-time code to this mailbox; Aether
+    /// prompts for the code interactively over the PTY.
+    #[serde(default)]
+    pub zero_trust_email: String,
+    /// `--access-id`, paired with `zero_trust_access_secret` below
+    /// (`--access-secret`) — an Access service token for headless sign-in.
+    #[serde(default)]
+    pub zero_trust_access_id: String,
+    #[serde(default)]
+    pub zero_trust_access_secret: String,
+    /// `--access-token`: a JWT already obtained by signing in at
+    /// `<team>.cloudflareaccess.com/warp`.
+    #[serde(default)]
+    pub zero_trust_access_token: String,
+    /// `--gateway`: routes HTTP/HTTPS through the organization's Gateway
+    /// proxy so its filtering/logging apply. Off by default — it adds a hop
+    /// and logs browsing, so this is opt-in even when Zero Trust itself is
+    /// on. Only ever passed when `zero_trust_enabled` is also true, since
+    /// Gateway routing has no meaning outside a Zero Trust enrollment.
+    #[serde(default)]
+    pub gateway_enabled: bool,
 }
 
 fn default_true() -> bool {
@@ -312,11 +364,64 @@ impl ConnectionProfile {
         }
         let peer = self.forced_peer.trim();
         if !peer.is_empty() {
-            args.push("--peer".into());
+            // Aether accepts `--peer` for MASQUE and `--wg-peer` for
+            // WireGuard/gool (gool's outer tunnel is itself WireGuard —
+            // see Docs/GUIDE.fa.md upstream's own example:
+            // `--gool --wg-peer 162.159.192.1:2408`). Sending `--peer` while
+            // WireGuard/gool is selected used to be silently ignored by
+            // Aether, which was indistinguishable from Peer Override "not
+            // working" at all.
+            match self.protocol {
+                Protocol::Wireguard | Protocol::Gool => args.push("--wg-peer".into()),
+                Protocol::Auto | Protocol::Masque => args.push("--peer".into()),
+            }
             args.push(peer.into());
         }
         if self.verbose_logs {
             args.push("--verbose".into());
+        }
+        if self.zero_trust_enabled {
+            let team = self.zero_trust_team.trim();
+            if !team.is_empty() {
+                args.push("--team".into());
+                args.push(team.into());
+                match self.zero_trust_auth_method {
+                    ZeroTrustAuthMethod::Email => {
+                        let email = self.zero_trust_email.trim();
+                        if !email.is_empty() {
+                            args.push("--access-email".into());
+                            args.push(email.into());
+                        }
+                    }
+                    ZeroTrustAuthMethod::ServiceToken => {
+                        let id = self.zero_trust_access_id.trim();
+                        let secret = self.zero_trust_access_secret.trim();
+                        // Both halves of the service token are required —
+                        // Aether has no use for one without the other, so
+                        // an incomplete pair is treated like neither was
+                        // typed in yet rather than sent partially.
+                        if !id.is_empty() && !secret.is_empty() {
+                            args.push("--access-id".into());
+                            args.push(id.into());
+                            args.push("--access-secret".into());
+                            args.push(secret.into());
+                        }
+                    }
+                    ZeroTrustAuthMethod::AccessToken => {
+                        let token = self.zero_trust_access_token.trim();
+                        if !token.is_empty() {
+                            args.push("--access-token".into());
+                            args.push(token.into());
+                        }
+                    }
+                }
+                // Gateway routing only means something once actually
+                // enrolled in a team, so it rides on the same `team.is_empty()`
+                // guard rather than its own independent check.
+                if self.gateway_enabled {
+                    args.push("--gateway".into());
+                }
+            }
         }
         args
     }
@@ -347,6 +452,14 @@ impl Default for ConnectionProfile {
             ech_config: String::new(),
             forced_peer: String::new(),
             verbose_logs: false,
+            zero_trust_enabled: false,
+            zero_trust_team: String::new(),
+            zero_trust_auth_method: ZeroTrustAuthMethod::default(),
+            zero_trust_email: String::new(),
+            zero_trust_access_id: String::new(),
+            zero_trust_access_secret: String::new(),
+            zero_trust_access_token: String::new(),
+            gateway_enabled: false,
         }
     }
 }

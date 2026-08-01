@@ -51,6 +51,14 @@ interface ConnectionState {
   setEchConfig: (ech_config: string) => void;
   setForcedPeer: (forced_peer: string) => void;
   setVerboseLogs: (verbose_logs: boolean) => void;
+  setZeroTrustEnabled: (zero_trust_enabled: boolean) => void;
+  setZeroTrustTeam: (zero_trust_team: string) => void;
+  setZeroTrustAuthMethod: (zero_trust_auth_method: ConnectionProfile["zero_trust_auth_method"]) => void;
+  setZeroTrustEmail: (zero_trust_email: string) => void;
+  setZeroTrustAccessId: (zero_trust_access_id: string) => void;
+  setZeroTrustAccessSecret: (zero_trust_access_secret: string) => void;
+  setZeroTrustAccessToken: (zero_trust_access_token: string) => void;
+  setGatewayEnabled: (gateway_enabled: boolean) => void;
   retryAfterSidecarError: () => void;
   /** Clears only the in-memory panel view — the persistent file log
    * (filelog.rs, %APPDATA%\...\logs\aether-YYYY-MM-DD.log) is untouched,
@@ -75,6 +83,14 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     ech_config: "",
     forced_peer: "",
     verbose_logs: false,
+    zero_trust_enabled: false,
+    zero_trust_team: "",
+    zero_trust_auth_method: "email",
+    zero_trust_email: "",
+    zero_trust_access_id: "",
+    zero_trust_access_secret: "",
+    zero_trust_access_token: "",
+    gateway_enabled: false,
   },
   logs: [],
   sidecarError: null,
@@ -149,6 +165,30 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   setVerboseLogs: (verbose_logs) =>
     set((s) => ({ profile: { ...s.profile, verbose_logs } })),
+
+  setZeroTrustEnabled: (zero_trust_enabled) =>
+    set((s) => ({ profile: { ...s.profile, zero_trust_enabled } })),
+
+  setZeroTrustTeam: (zero_trust_team) =>
+    set((s) => ({ profile: { ...s.profile, zero_trust_team } })),
+
+  setZeroTrustAuthMethod: (zero_trust_auth_method) =>
+    set((s) => ({ profile: { ...s.profile, zero_trust_auth_method } })),
+
+  setZeroTrustEmail: (zero_trust_email) =>
+    set((s) => ({ profile: { ...s.profile, zero_trust_email } })),
+
+  setZeroTrustAccessId: (zero_trust_access_id) =>
+    set((s) => ({ profile: { ...s.profile, zero_trust_access_id } })),
+
+  setZeroTrustAccessSecret: (zero_trust_access_secret) =>
+    set((s) => ({ profile: { ...s.profile, zero_trust_access_secret } })),
+
+  setZeroTrustAccessToken: (zero_trust_access_token) =>
+    set((s) => ({ profile: { ...s.profile, zero_trust_access_token } })),
+
+  setGatewayEnabled: (gateway_enabled) =>
+    set((s) => ({ profile: { ...s.profile, gateway_enabled } })),
 
   setSystemProxyEnabled: async (enabled) => {
     const previous = get().systemProxyEnabled;

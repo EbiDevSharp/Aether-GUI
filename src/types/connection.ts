@@ -15,6 +15,7 @@ export type ScanMode = "turbo" | "balanced" | "thorough" | "stealth" | "ironclad
 export type IpVersion = "v4" | "v6" | "both";
 export type NoizeProfile = "off" | "light" | "balanced" | "aggressive";
 export type EchMode = "off" | "auto" | "custom";
+export type ZeroTrustAuthMethod = "email" | "servicetoken" | "accesstoken";
 
 export interface ConnectionProfile {
   protocol: Protocol;
@@ -51,6 +52,27 @@ export interface ConnectionProfile {
   /** Aether ≥1.3.0: `--verbose`, detailed per-stage debug logs — the most
    * useful thing to turn on when diagnosing a mysterious drop. */
   verbose_logs: boolean;
+  /** Aether ≥1.5.0: enrol as a managed device on a Cloudflare Zero Trust
+   * organization (`--team <name>`) instead of an anonymous consumer WARP
+   * device. Off means the `zero_trust_*`/`gateway_enabled` fields below are
+   * never sent, whatever they're set to. */
+  zero_trust_enabled: boolean;
+  /** The organization's team name, e.g. "acme" for acme.cloudflareaccess.com. */
+  zero_trust_team: string;
+  zero_trust_auth_method: ZeroTrustAuthMethod;
+  /** `--access-email`: a one-time code is sent here; Aether then prompts
+   * for it. */
+  zero_trust_email: string;
+  /** `--access-id` — paired with `zero_trust_access_secret`
+   * (`--access-secret`), an Access service token for headless sign-in. */
+  zero_trust_access_id: string;
+  zero_trust_access_secret: string;
+  /** `--access-token`: a JWT already obtained by signing in at
+   * `<team>.cloudflareaccess.com/warp`. */
+  zero_trust_access_token: string;
+  /** `--gateway`: routes HTTP/HTTPS through the organization's Gateway
+   * proxy. Off by default even when Zero Trust is enabled. */
+  gateway_enabled: boolean;
 }
 
 export interface LogLine {
